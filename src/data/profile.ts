@@ -27,8 +27,9 @@ export const profile: Profile = {
     'Networking',
   ],
   careerInterests: ['Software Development', 'Data Analytics', 'IT Support and Systems'], // TODO: confirm
-  // Formal photo shown in the hero arch.
-  photo: require('@/assets/images/profile.jpg'),
+  // Hero photo (optional). Without one, the hero shows the XL monogram arch.
+  //   photo: require('@/assets/images/profile.jpg'),
+  photo: undefined,
   resumeUrl: undefined, // TODO: add public/resume.pdf (project root) then set to '/resume.pdf'
   email: 'lagurascx@gmail.com',
   linkedinUrl: undefined, // TODO: your LinkedIn URL
