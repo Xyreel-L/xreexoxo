@@ -65,7 +65,7 @@ export const achievements: Achievement[] = [
     id: 'data-analytics-essentials',
     title: 'Data Analytics Essentials',
     category: 'technical_training',
-    year: 2025,
+    year: 2026,
     credentialType: 'Course Certificate',
   },
   {
