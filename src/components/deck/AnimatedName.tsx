@@ -29,23 +29,18 @@ export function AnimatedName({ lines, size }: { lines: string[]; size: number })
 function Letter({ ch, index, size }: { ch: string; index: number; size: number }) {
   const [hover, setHover] = useState(false);
   const enter = 300 + index * 55;
+  // Letters rise into place once, then stay perfectly level.
   const anim = {
     animationKeyframes: [
       {
-        from: { opacity: 0, transform: [{ translateY: size * 0.5 }, { rotate: '-8deg' }] },
-        to: { opacity: 1, transform: [{ translateY: 0 }, { rotate: '0deg' }] },
-      },
-      {
-        '0%': { transform: [{ translateY: 0 }] },
-        '50%': { transform: [{ translateY: -size * 0.045 }] },
-        '100%': { transform: [{ translateY: 0 }] },
+        from: { opacity: 0, transform: [{ translateY: size * 0.4 }] },
+        to: { opacity: 1, transform: [{ translateY: 0 }] },
       },
     ],
-    animationDuration: `700ms, 3.6s`,
-    animationDelay: `${enter}ms, ${enter + 700 + index * 120}ms`,
-    animationIterationCount: '1, infinite',
-    animationTimingFunction: 'cubic-bezier(0.2, 0.8, 0.25, 1), ease-in-out',
-    animationFillMode: 'both, none',
+    animationDuration: '700ms',
+    animationDelay: `${enter}ms`,
+    animationTimingFunction: 'cubic-bezier(0.2, 0.8, 0.25, 1)',
+    animationFillMode: 'both',
   } as object as ViewStyle;
 
   return (
@@ -55,7 +50,7 @@ function Letter({ ch, index, size }: { ch: string; index: number; size: number }
         style={[
           styles.letter,
           { fontSize: size, lineHeight: size * 1.02 },
-          hover && { color: colors.mauve, transform: [{ translateY: -size * 0.12 }, { rotate: '-4deg' }] },
+          hover && { color: colors.mauve },
         ]}
       >
         {ch}

@@ -138,23 +138,19 @@ export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardR
         ))}
       </View>
 
-      {/* ---------- Header ---------- */}
-      <View role="banner" style={styles.header}>
-        <View style={[styles.headerInner, { paddingHorizontal: side }]}>
-          <View style={styles.headerLeft}>
-            <View style={styles.monogram}>
-              <Text style={styles.monogramText}>{initials(profile.fullName)}</Text>
-            </View>
-            <Text style={[styles.welcome, isMobile && { fontSize: 11, letterSpacing: 1.4 }]}>WELCOME TO MY PORTFOLIO</Text>
-          </View>
-          {!isMobile ? <Text style={styles.headerRight}>INFORMATION TECHNOLOGY · {new Date().getFullYear()}</Text> : null}
-        </View>
-      </View>
-
       {/* ---------- Title ---------- */}
-      <View style={[styles.titleBlock, { paddingHorizontal: side, paddingTop: isMobile ? 28 : 44 }]}>
+      <View style={[styles.titleBlock, { paddingHorizontal: side, paddingTop: isMobile ? 24 : 40 }]}>
+        <View style={styles.topRow}>
+          <Text style={[styles.welcome, { fontSize: isMobile ? 13 : 18, lineHeight: isMobile ? 18 : 24 }]}>
+            WELCOME TO{'\n'}MY PORTFOLIO
+          </Text>
+          <View style={styles.monogram}>
+            <Text style={styles.monogramText}>{initials(profile.fullName)}</Text>
+          </View>
+        </View>
+
         <View style={[styles.titleStage, { height: titleSize * lines.length * 1.04 + titleSize * 0.55 }]}>
-          <View style={[styles.echo, echoAnim]} aria-hidden>
+          <View style={styles.echo} aria-hidden>
             <Svg width={echoWidth} height={titleSize * lines.length * 1.04 + 10}>
               {lines.map((line, i) => (
                 <SvgText
@@ -318,53 +314,23 @@ const dealIn = (i: number) =>
     animationFillMode: 'backwards',
   }) as object as ViewStyle;
 
-const echoAnim = {
-  animationKeyframes: [
-    {
-      '0%': { transform: [{ translateX: -16 }, { skewX: '-7deg' }] },
-      '50%': { transform: [{ translateX: 16 }, { skewX: '7deg' }] },
-      '100%': { transform: [{ translateX: -16 }, { skewX: '-7deg' }] },
-    },
-  ],
-  animationDuration: '6s',
-  animationIterationCount: 'infinite',
-  animationTimingFunction: 'ease-in-out',
-} as object as ViewStyle;
-
 const styles = StyleSheet.create({
   wrap: { backgroundColor: colors.cream, overflow: 'hidden', flexGrow: 1 },
   plus: { position: 'absolute', ...sans('500') },
   star: { position: 'absolute' },
   titleBlock: { width: '100%', maxWidth: 1400, alignSelf: 'center' },
-  header: {
-    width: '100%',
-    backgroundColor: 'rgba(255, 249, 244, 0.85)',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line,
-    zIndex: 3,
-  },
-  headerInner: {
-    width: '100%',
-    maxWidth: 1400,
-    alignSelf: 'center',
-    height: 72,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  headerRight: { ...sans('600'), fontSize: 12, letterSpacing: 2, color: colors.plumSoft },
-  welcome: { ...sans('700'), fontSize: 13, color: colors.plum, letterSpacing: 2.2 },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 3 },
+  welcome: { ...sans('700'), color: colors.plum, letterSpacing: 1.8 },
   monogram: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     borderWidth: 1.5,
     borderColor: colors.plum,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  monogramText: { ...serif('600'), fontSize: 14, color: colors.plum },
+  monogramText: { ...serif('600'), fontSize: 16, color: colors.plum },
   titleStage: { alignItems: 'center', marginTop: 12 },
   echo: { position: 'absolute', alignSelf: 'center', top: 0 },
   nameWrap: { position: 'absolute', left: 0, right: 0 },
