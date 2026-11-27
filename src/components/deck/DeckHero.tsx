@@ -47,7 +47,7 @@ export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardR
 
   // ---- wheel geometry: cards sit on a circle tilted outward, and the whole
   // wheel spins flat around the hub like a loading spinner.
-  const cardW = isMobile ? clamp(W * 0.27, 100, 150) : clamp(Math.min(W * 0.17, vh * 0.27), 160, 250);
+  const cardW = isMobile ? clamp(Math.min(W * 0.34, vh * 0.2), 100, 160) : clamp(Math.min(W * 0.17, vh * 0.27), 160, 250);
   const cardH = cardW * 1.4;
   const STEP = 36; // degrees between neighbouring cards (10 cards around the ring)
   const COPIES = Math.round(360 / STEP / DECK.length); // repeat the deck all the way round
@@ -55,7 +55,7 @@ export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardR
   const R = spacing / (2 * Math.sin(((STEP / 2) * Math.PI) / 180));
   // Big hub filling the inside of the card ring; only its top half shows, as the footer.
   const hubR = Math.max(40, R - cardH / 2 - (isMobile ? 18 : 30)); // fixed gap between hub and cards
-  const topPad = 70;
+  const topPad = isMobile ? 40 : 70;
   const pivotY = topPad + cardH / 2 + R; // hub centre, from the top of the wheel area
   const wheelH = pivotY; // clip at the hub's centre so it reads as a half circle
   const startIndex = DECK.findIndex((c) => c.id === CENTER_ID);
@@ -183,7 +183,8 @@ export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardR
         </View>
       </View>
 
-      {/* ---------- Wheel ---------- */}
+      {/* ---------- Wheel + footer (centred in the space left under the name) ---------- */}
+      <View style={styles.lower}>
       <View style={[styles.wheelArea, { height: wheelH }]}>
         <View
           ref={(el) => {
@@ -253,7 +254,8 @@ export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardR
         </Pressable>
       </View>
 
-      <Text style={styles.hint}>xreexoxo {new Date().getFullYear()}</Text>
+      <Text style={[styles.hint, isMobile && { paddingVertical: 14 }]}>xreexoxo {new Date().getFullYear()}</Text>
+      </View>
     </View>
   );
 }
@@ -316,6 +318,7 @@ const dealIn = (i: number) =>
 
 const styles = StyleSheet.create({
   wrap: { backgroundColor: colors.cream, overflow: 'hidden', flexGrow: 1 },
+  lower: { flexGrow: 1, justifyContent: 'flex-end' },
   plus: { position: 'absolute', ...sans('500') },
   star: { position: 'absolute' },
   titleBlock: { width: '100%', maxWidth: 1400, alignSelf: 'center' },

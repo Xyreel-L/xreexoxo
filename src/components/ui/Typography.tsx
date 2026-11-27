@@ -1,4 +1,6 @@
+import { useContext } from 'react';
 import { StyleSheet, Text, TextProps } from 'react-native';
+import { CompactSection } from './SectionContext';
 import { colors, sans, serif } from '@/theme/tokens';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 
@@ -19,7 +21,8 @@ export function Display({ style, ...rest }: Props) {
 
 export function H2({ style, ...rest }: Props) {
   const { isMobile } = useBreakpoint();
-  const size = isMobile ? 34 : 46;
+  const compact = useContext(CompactSection);
+  const size = isMobile ? (compact ? 27 : 34) : 46;
   return (
     <Text
       role="heading"

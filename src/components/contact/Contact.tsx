@@ -73,7 +73,7 @@ export function Contact({ onMeasure }: { onMeasure?: (id: string, y: number) => 
               style={styles.emailLink}
             >
               <Mail size={20} color={colors.rose} strokeWidth={1.7} />
-              <Text style={styles.email} selectable>
+              <Text style={[styles.email, !isDesktop && { fontSize: 18 }]} selectable>
                 {profile.email}
               </Text>
             </Pressable>

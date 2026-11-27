@@ -129,7 +129,7 @@ export function ExpandedCard({
 
         {showContent ? (
           <View style={[styles.inner, contentIn]}>
-            <View style={styles.bar}>
+            <View style={[styles.bar, isMobile && styles.barMobile]}>
               <View style={styles.barLeft}>
                 <BarButton label={`Previous: ${prev.title}`} onPress={() => onSwitch(prev.id)}>
                   <ChevronLeft size={20} color={colors.plum} strokeWidth={1.8} />
@@ -240,6 +240,7 @@ const styles = StyleSheet.create({
   barCenter: { flex: 1, alignItems: 'center' },
   barIndex: { ...sans('700'), fontSize: 11, letterSpacing: 1.6, color: colors.mauveDeep },
   barTitle: { ...serif('500'), fontSize: 22, color: colors.plum },
+  barMobile: { paddingHorizontal: 10, paddingVertical: 8, gap: 6 },
   barBtn: {
     width: 44,
     height: 44,

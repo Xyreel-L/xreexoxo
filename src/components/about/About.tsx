@@ -18,7 +18,7 @@ export function About({ onMeasure }: { onMeasure?: (id: string, y: number) => vo
 
       <View style={[styles.grid, isDesktop && { flexDirection: 'row' }]}>
         <View style={[styles.bio, isDesktop && { flex: 1.25 }]}>
-          {lead ? <Text style={styles.lead}>{lead}</Text> : null}
+          {lead ? <Text style={[styles.lead, !isDesktop && styles.leadMobile]}>{lead}</Text> : null}
           {rest.map((p, i) => (
             <Body key={i} style={styles.paragraph}>
               {p}
@@ -88,6 +88,7 @@ const styles = StyleSheet.create({
   grid: { gap: space.xxxl, alignItems: 'flex-start' },
   bio: { gap: space.xl },
   lead: { ...serif('400'), fontSize: 24, lineHeight: 36, color: colors.plum, letterSpacing: -0.3 },
+  leadMobile: { fontSize: 19, lineHeight: 29 },
   paragraph: { fontSize: 17, lineHeight: 29 },
   facts: { padding: space.xl, width: '100%', backgroundColor: colors.cream },
   fact: { flexDirection: 'row', gap: space.lg, paddingVertical: space.lg },

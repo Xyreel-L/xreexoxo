@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     gap: space.lg,
     marginBottom: space.xxxl,
   },
-  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, flexShrink: 1, maxWidth: '100%' },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     borderColor: colors.lineStrong,
     borderRadius: radius.pill,
     paddingHorizontal: 16,
-    minWidth: 240,
+    minWidth: 200,
     flexGrow: 1,
     maxWidth: 360,
     height: 44,

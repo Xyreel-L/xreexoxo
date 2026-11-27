@@ -64,6 +64,7 @@ export function SectionHeader({
   inverted?: boolean;
 }) {
   const center = align === 'center';
+  const { isMobile } = useBreakpoint();
   return (
     <View style={[styles.header, center && { alignItems: 'center' }]}>
       <View style={[styles.eyebrowRow, center && { justifyContent: 'center' }]}>
@@ -89,6 +90,7 @@ export function SectionHeader({
         <Body
           style={[
             styles.intro,
+            isMobile && styles.introMobile,
             center && { textAlign: 'center' },
             inverted && { color: colors.blush },
           ]}
@@ -110,4 +112,5 @@ const styles = StyleSheet.create({
   eyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   rule: { width: 28, height: 1.5, backgroundColor: colors.mauve },
   intro: { fontSize: 17, lineHeight: 29 },
+  introMobile: { fontSize: 15, lineHeight: 24 },
 });
