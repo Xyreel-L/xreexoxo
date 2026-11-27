@@ -46,13 +46,13 @@ export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardR
 
   // ---- wheel geometry: cards sit on a circle tilted outward, and the whole
   // wheel spins flat around the hub like a loading spinner.
-  const cardW = isMobile ? clamp(W * 0.22, 84, 124) : clamp(Math.min(W * 0.14, vh * 0.2), 130, 210);
+  const cardW = isMobile ? clamp(W * 0.27, 100, 150) : clamp(Math.min(W * 0.17, vh * 0.27), 160, 250);
   const cardH = cardW * 1.4;
   const STEP = 36; // degrees between neighbouring cards (10 cards around the ring)
   const COPIES = Math.round(360 / STEP / DECK.length); // repeat the deck all the way round
   const spacing = cardW * (isMobile ? 0.8 : 0.92);
   const R = spacing / (2 * Math.sin(((STEP / 2) * Math.PI) / 180));
-  const hubR = isMobile ? 46 : 70;
+  const hubR = isMobile ? 62 : 104;
   const topPad = 70;
   const pivotY = topPad + cardH / 2 + R; // hub centre, from the top of the wheel area
   const wheelH = pivotY + Math.max(hubR + 28, cardW * 0.62); // show the hub and the sideways cards
@@ -239,10 +239,10 @@ export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardR
         >
           <View style={[styles.hubRing, { borderRadius: hubR }]} />
           <View style={[StyleSheet.absoluteFill, spinAnim]}>
-            <RingText radius={hubR - 12} small={isMobile} />
+            <RingText radius={hubR - 16} small={isMobile} />
           </View>
           <Text style={styles.meArrow}>▲</Text>
-          <Text style={[styles.meText, isMobile && { fontSize: 14 }]}>ME</Text>
+          <Text style={[styles.meText, isMobile && { fontSize: 18 }]}>ME</Text>
         </Pressable>
       </View>
 
@@ -261,7 +261,7 @@ function RingText({ radius, small }: { radius: number; small?: boolean }) {
           key={i}
           style={[
             styles.ringChar,
-            small && { fontSize: 9 },
+            small && { fontSize: 11 },
             { transform: [{ rotate: `${i * stepDeg}deg` }, { translateY: -radius }] },
           ]}
         >
@@ -366,9 +366,9 @@ const styles = StyleSheet.create({
     borderColor: colors.mauve,
     backgroundColor: 'rgba(255, 249, 244, 0.85)',
   } as object,
-  ringChar: { ...sans('700'), position: 'absolute', fontSize: 11, color: colors.plumSoft },
+  ringChar: { ...sans('700'), position: 'absolute', fontSize: 14, color: colors.plumSoft },
   meArrow: { fontSize: 11, color: colors.plum },
-  meText: { ...sans('700'), fontSize: 19, letterSpacing: 2, color: colors.plum },
+  meText: { ...sans('700'), fontSize: 26, letterSpacing: 2, color: colors.plum },
   slot: {
     position: 'absolute',
     left: 0,

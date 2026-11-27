@@ -4,6 +4,7 @@ import { colors } from '@/theme/tokens';
 import { DeckHero, type CardRect } from '@/components/deck/DeckHero';
 import { ExpandedCard } from '@/components/deck/ExpandedCard';
 import { DECK } from '@/components/deck/cards';
+import { useHydrated } from '@/hooks/useViewport';
 
 type Open = { id: string; from?: CardRect } | null;
 
@@ -15,6 +16,9 @@ function setHash(id: string | null) {
 
 export default function Home() {
   const [open, setOpen] = useState<Open>(null);
+  // Remount the hero once hydrated so every size-dependent style is computed
+  // fresh for the real screen (the pre-rendered HTML uses a desktop size).
+  const hydrated = useHydrated();
 
   // Deep links: xreexoxo.vercel.app/#achievements opens that card directly.
   useEffect(() => {
@@ -43,7 +47,7 @@ export default function Home() {
     <View style={styles.root}>
       <ScrollView style={styles.root} contentContainerStyle={{ flexGrow: 1 }} aria-hidden={!!open}>
         <View role="main" style={{ flexGrow: 1 }}>
-          <DeckHero onOpen={onOpen} paused={!!open} />
+          <DeckHero key={hydrated ? 'client' : 'ssr'} onOpen={onOpen} paused={!!open} />
         </View>
       </ScrollView>
       {open ? <ExpandedCard id={open.id} from={open.from} onClose={onClose} onSwitch={onSwitch} /> : null}
