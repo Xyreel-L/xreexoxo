@@ -9,6 +9,7 @@ import { achievements } from '@/data/achievements';
 import { projects } from '@/data/projects';
 import { gallery } from '@/data/gallery';
 import { initials } from '@/utils/text';
+import { DARK, LIGHT, TINTED, type Surface } from '@/theme/surface';
 import { About } from '@/components/about/About';
 import { Skills } from '@/components/skills/Skills';
 import { Achievements } from '@/components/achievements/Achievements';
@@ -21,6 +22,8 @@ export type DeckCard = {
   title: string;
   /** Card background, also used while the card opens. */
   bg: string;
+  /** Text palette used inside the popup, which shares the card colour. */
+  surface: Surface;
   Face: ComponentType<{ w: number }>;
   Content: ComponentType;
 };
@@ -156,12 +159,12 @@ function ContactFace({ w }: { w: number }) {
 
 /** The deck, left to right. "About" sits in the middle of the fan. */
 export const DECK: DeckCard[] = [
-  { id: 'skills', title: 'Tech Stack', bg: colors.rose, Face: SkillsFace, Content: Skills },
-  { id: 'achievements', title: 'Certificates', bg: colors.ivory, Face: AchievementsFace, Content: Achievements },
-  { id: 'about', title: 'About Me', bg: colors.plum, Face: AboutFace, Content: About },
-  { id: 'projects', title: 'Projects', bg: colors.blush, Face: ProjectsFace, Content: Projects },
-  ...(gallery.length ? [{ id: 'gallery', title: 'Gallery', bg: colors.cream, Face: GalleryFace, Content: Gallery }] : []),
-  { id: 'contact', title: 'Contact', bg: '#5E4753', Face: ContactFace, Content: Contact },
+  { id: 'skills', title: 'Tech Stack', bg: colors.rose, surface: TINTED, Face: SkillsFace, Content: Skills },
+  { id: 'achievements', title: 'Certificates', bg: colors.ivory, surface: LIGHT, Face: AchievementsFace, Content: Achievements },
+  { id: 'about', title: 'About Me', bg: colors.plum, surface: DARK, Face: AboutFace, Content: About },
+  { id: 'projects', title: 'Projects', bg: colors.blush, surface: TINTED, Face: ProjectsFace, Content: Projects },
+  ...(gallery.length ? [{ id: 'gallery', title: 'Gallery', bg: colors.cream, surface: LIGHT, Face: GalleryFace, Content: Gallery }] : []),
+  { id: 'contact', title: 'Contact', bg: '#5E4753', surface: DARK, Face: ContactFace, Content: Contact },
 ];
 
 export const CENTER_ID = 'about';

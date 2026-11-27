@@ -13,6 +13,7 @@ import {
 import { ChevronLeft, ChevronRight, X } from '@/components/ui/icons';
 import { colors, sans, serif } from '@/theme/tokens';
 import { CompactSection } from '@/components/ui/SectionContext';
+import { SurfaceContext } from '@/theme/surface';
 import { DECK } from './cards';
 import type { CardRect } from './DeckHero';
 
@@ -117,7 +118,7 @@ export function ExpandedCard({
         role="dialog"
         aria-modal
         aria-label={card.title}
-        style={[styles.frame, frame, { backgroundColor: showContent ? colors.ivory : card.bg }, !from && popIn]}
+        style={[styles.frame, frame, { backgroundColor: card.bg }, !from && popIn]}
       >
         {!showContent && from ? (
           <View style={[StyleSheet.absoluteFill, styles.fade, { opacity: phase === 'open' ? 0 : 1 }]}>
@@ -155,7 +156,9 @@ export function ExpandedCard({
 
             <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
               <CompactSection.Provider value={true}>
-                <Content key={id} />
+                <SurfaceContext.Provider value={{ ...card.surface, bg: card.bg }}>
+                  <Content key={id} />
+                </SurfaceContext.Provider>
               </CompactSection.Provider>
             </ScrollView>
           </View>

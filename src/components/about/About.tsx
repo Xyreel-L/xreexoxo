@@ -3,6 +3,7 @@ import { GraduationCap, MapPin, Target, Lightbulb } from '@/components/ui/icons'
 import { colors, radius, sans, serif, space } from '@/theme/tokens';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { profile } from '@/data/profile';
+import { useSurface } from '@/theme/surface';
 import { Section, SectionHeader } from '@/components/ui/Section';
 import { Body, Small } from '@/components/ui/Typography';
 import { Card } from '@/components/ui/Card';
@@ -11,6 +12,7 @@ import { Tag } from '@/components/ui/Tag';
 export function About({ onMeasure }: { onMeasure?: (id: string, y: number) => void }) {
   const { isDesktop } = useBreakpoint();
   const [lead, ...rest] = profile.biography;
+  const surface = useSurface();
 
   return (
     <Section id="about" tone="ivory" onMeasure={onMeasure}>
@@ -18,7 +20,7 @@ export function About({ onMeasure }: { onMeasure?: (id: string, y: number) => vo
 
       <View style={[styles.grid, isDesktop && { flexDirection: 'row' }]}>
         <View style={[styles.bio, isDesktop && { flex: 1.25 }]}>
-          {lead ? <Text style={styles.lead}>{lead}</Text> : null}
+          {lead ? <Text style={[styles.lead, { color: surface.ink }]}>{lead}</Text> : null}
           {rest.map((p, i) => (
             <Body key={i} style={styles.paragraph}>
               {p}

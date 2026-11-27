@@ -1,6 +1,7 @@
 import { StyleSheet, Text, TextProps } from 'react-native';
 import { colors, sans, serif } from '@/theme/tokens';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { useSurface } from '@/theme/surface';
 
 type Props = TextProps & { children: React.ReactNode };
 
@@ -11,7 +12,7 @@ export function Display({ style, ...rest }: Props) {
     <Text
       role="heading"
       aria-level={1}
-      style={[styles.display, { fontSize: size, lineHeight: size * 1.04 }, style]}
+      style={[styles.display, { fontSize: size, lineHeight: size * 1.04, color: useSurface().ink }, style]}
       {...rest}
     />
   );
@@ -24,26 +25,30 @@ export function H2({ style, ...rest }: Props) {
     <Text
       role="heading"
       aria-level={2}
-      style={[styles.h2, { fontSize: size, lineHeight: size * 1.1 }, style]}
+      style={[styles.h2, { fontSize: size, lineHeight: size * 1.1, color: useSurface().ink }, style]}
       {...rest}
     />
   );
 }
 
 export function H3({ style, ...rest }: Props) {
-  return <Text role="heading" aria-level={3} style={[styles.h3, style]} {...rest} />;
+  const { ink } = useSurface();
+  return <Text role="heading" aria-level={3} style={[styles.h3, { color: ink }, style]} {...rest} />;
 }
 
 export function Eyebrow({ style, ...rest }: Props) {
-  return <Text style={[styles.eyebrow, style]} {...rest} />;
+  const { accent } = useSurface();
+  return <Text style={[styles.eyebrow, { color: accent }, style]} {...rest} />;
 }
 
 export function Body({ style, ...rest }: Props) {
-  return <Text style={[styles.body, style]} {...rest} />;
+  const { soft } = useSurface();
+  return <Text style={[styles.body, { color: soft }, style]} {...rest} />;
 }
 
 export function Small({ style, ...rest }: Props) {
-  return <Text style={[styles.small, style]} {...rest} />;
+  const { soft } = useSurface();
+  return <Text style={[styles.small, { color: soft }, style]} {...rest} />;
 }
 
 const styles = StyleSheet.create({

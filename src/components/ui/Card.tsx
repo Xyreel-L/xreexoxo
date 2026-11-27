@@ -1,5 +1,6 @@
 import { Pressable, PressableStateCallbackType, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { colors, radius, shadow } from '@/theme/tokens';
+import { LIGHT, SurfaceContext } from '@/theme/surface';
 
 type WebState = PressableStateCallbackType & { hovered?: boolean; focused?: boolean };
 
@@ -11,7 +12,9 @@ type Props = {
 };
 
 /** Ivory surface. Becomes an interactive, hover-lifting card when onPress is set. */
-export function Card({ children, style, onPress, accessibilityLabel }: Props) {
+export function Card({ children: content, style, onPress, accessibilityLabel }: Props) {
+  // Cards are light panels, so text inside always uses the light palette.
+  const children = <SurfaceContext.Provider value={LIGHT}>{content}</SurfaceContext.Provider>;
   if (!onPress) return <View style={[styles.card, style]}>{children}</View>;
   return (
     <Pressable

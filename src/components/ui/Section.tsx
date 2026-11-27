@@ -5,6 +5,7 @@ import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { Body, Eyebrow, H2 } from './Typography';
 import { InView } from './InView';
 import { CompactSection } from './SectionContext';
+import { useSurface } from '@/theme/surface';
 
 export function Container({ style, ...rest }: ViewProps) {
   const { isMobile } = useBreakpoint();
@@ -25,10 +26,18 @@ type SectionProps = ViewProps & {
 export function Section({ id, tone = 'cream', onMeasure, style, children, ...rest }: SectionProps) {
   const { isMobile } = useBreakpoint();
   const compact = useContext(CompactSection);
+  const surface = useSurface();
   // Inside a popup every light section shares one background so the modal looks uniform.
   const resolved = compact && tone !== 'plum' ? 'ivory' : tone;
   const bg: ViewStyle = {
-    backgroundColor: resolved === 'ivory' ? colors.ivory : resolved === 'plum' ? colors.plum : colors.cream,
+    backgroundColor:
+      compact && surface.bg
+        ? surface.bg
+        : resolved === 'ivory'
+          ? colors.ivory
+          : resolved === 'plum'
+            ? colors.plum
+            : colors.cream,
   };
   const padding = compact ? (isMobile ? space.xl : space.xxl + 4) : isMobile ? space.huge : space.giant;
   return (
@@ -64,10 +73,11 @@ export function SectionHeader({
   inverted?: boolean;
 }) {
   const center = align === 'center';
+  const surface = useSurface();
   return (
     <View style={[styles.header, center && { alignItems: 'center' }]}>
       <View style={[styles.eyebrowRow, center && { justifyContent: 'center' }]}>
-        <View style={[styles.rule, inverted && { backgroundColor: colors.rose }]} />
+        <View style={[styles.rule, { backgroundColor: inverted ? colors.rose : surface.rule }]} />
         <Eyebrow
           nativeID={title ? undefined : `${id}-title`}
           role={title ? undefined : 'heading'}

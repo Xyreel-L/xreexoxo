@@ -3,6 +3,7 @@ import { Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-
 import { X } from '@/components/ui/icons';
 import { colors, radius, shadow, space } from '@/theme/tokens';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { LIGHT, SurfaceContext } from '@/theme/surface';
 
 type Props = {
   visible: boolean;
@@ -65,7 +66,7 @@ export function Sheet({ visible, onClose, children, label, maxWidth = 760 }: Pro
             <X size={20} color={colors.plum} strokeWidth={1.8} />
           </Pressable>
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-            {children}
+            <SurfaceContext.Provider value={LIGHT}>{children}</SurfaceContext.Provider>
           </ScrollView>
         </View>
       </View>
