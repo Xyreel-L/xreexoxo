@@ -1,20 +1,20 @@
-import type { PropsWithChildren, ReactNode } from 'react';
-import { ScrollViewStyleReset } from 'expo-router/html';
+import type { PropsWithChildren } from 'react';
+import { ScrollViewStyleReset, useServerDocumentContext } from 'expo-router/html';
 import { profile } from '@/data/profile';
 import { site } from '@/constants/site';
 
 /**
  * Root HTML for the static web export (runs in Node at build time only).
  * Holds SEO + Open Graph tags and loads the web fonts.
+ *
+ * IMPORTANT: headNodes/bodyNodes carry the app's <script> tags and styles.
+ * Without them the page is static HTML that never becomes interactive.
  */
-export default function Root({
-  children,
-  headNodes,
-  bodyNodes,
-}: PropsWithChildren<{ headNodes?: ReactNode; bodyNodes?: ReactNode }>) {
+export default function Root({ children }: PropsWithChildren) {
+  const { htmlAttributes, bodyAttributes, headNodes, bodyNodes } = useServerDocumentContext();
   const title = `${profile.fullName} — ${site.shortTitle}`;
   return (
-    <html lang="en">
+    <html lang="en" {...htmlAttributes}>
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
@@ -47,7 +47,7 @@ export default function Root({
         <style dangerouslySetInnerHTML={{ __html: globalCss }} />
         {headNodes}
       </head>
-      <body>
+      <body {...bodyAttributes}>
         {children}
         {bodyNodes}
       </body>
