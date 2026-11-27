@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Platform, Pressable, PressableStateCallbackType, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { useViewport } from '@/hooks/useViewport';
-import Svg, { Defs, LinearGradient, Polygon, Stop, Text as SvgText } from 'react-native-svg';
+import Svg, { Text as SvgText } from 'react-native-svg';
 import { colors, sans, serif, shadow } from '@/theme/tokens';
 import { profile } from '@/data/profile';
 import { initials } from '@/utils/text';
@@ -138,23 +138,22 @@ export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardR
         ))}
       </View>
 
-      {/* ---------- Title ---------- */}
-      <View style={[styles.titleBlock, { paddingHorizontal: side, paddingTop: isMobile ? 24 : 40 }]}>
-        <View style={styles.topRow}>
-          <Text style={[styles.welcome, { fontSize: isMobile ? 13 : 18, lineHeight: isMobile ? 18 : 24 }]}>
-            WELCOME TO{'\n'}MY PORTFOLIO
-          </Text>
-          <View style={styles.monogram}>
-            <Text style={styles.monogramText}>{initials(profile.fullName)}</Text>
+      {/* ---------- Header ---------- */}
+      <View role="banner" style={styles.header}>
+        <View style={[styles.headerInner, { paddingHorizontal: side }]}>
+          <View style={styles.headerLeft}>
+            <View style={styles.monogram}>
+              <Text style={styles.monogramText}>{initials(profile.fullName)}</Text>
+            </View>
+            <Text style={[styles.welcome, isMobile && { fontSize: 11, letterSpacing: 1.4 }]}>WELCOME TO MY PORTFOLIO</Text>
           </View>
+          {!isMobile ? <Text style={styles.headerRight}>INFORMATION TECHNOLOGY · {new Date().getFullYear()}</Text> : null}
         </View>
+      </View>
 
+      {/* ---------- Title ---------- */}
+      <View style={[styles.titleBlock, { paddingHorizontal: side, paddingTop: isMobile ? 28 : 44 }]}>
         <View style={[styles.titleStage, { height: titleSize * lines.length * 1.04 + titleSize * 0.55 }]}>
-          <Ribbon
-            width={clamp(W * 0.12, 56, 150)}
-            height={titleSize * (lines.length * 1.04 + 1.25)}
-            top={-titleSize * 0.42}
-          />
           <View style={[styles.echo, echoAnim]} aria-hidden>
             <Svg width={echoWidth} height={titleSize * lines.length * 1.04 + 10}>
               {lines.map((line, i) => (
@@ -263,43 +262,6 @@ export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardR
   );
 }
 
-/**
- * Hanging ribbon behind the name: a rose band with a folded top and a
- * swallowtail notch, dropping in and then swaying gently.
- */
-function Ribbon({ width: w, height: h, top }: { width: number; height: number; top: number }) {
-  const notch = w * 0.42;
-  const fold = w * 0.16;
-  return (
-    <View style={[styles.ribbon, ribbonDrop, { width: w + fold * 2, height: h, top }]} aria-hidden>
-      <View style={[StyleSheet.absoluteFill, ribbonSway]}>
-        <Svg width={w + fold * 2} height={h}>
-          <Defs>
-            <LinearGradient id="ribbonFill" x1="0" y1="0" x2="1" y2="0">
-              <Stop offset="0" stopColor={colors.mauve} />
-              <Stop offset="0.18" stopColor={colors.rose} />
-              <Stop offset="0.82" stopColor={colors.rose} />
-              <Stop offset="1" stopColor={colors.mauve} />
-            </LinearGradient>
-          </Defs>
-          {/* folded tabs at the top corners */}
-          <Polygon points={`0,${fold} ${fold},0 ${fold},${fold * 2}`} fill={colors.mauveDeep} opacity={0.75} />
-          <Polygon
-            points={`${w + fold * 2},${fold} ${w + fold},0 ${w + fold},${fold * 2}`}
-            fill={colors.mauveDeep}
-            opacity={0.75}
-          />
-          {/* band with swallowtail end */}
-          <Polygon
-            points={`${fold},0 ${w + fold},0 ${w + fold},${h} ${fold + w / 2},${h - notch} ${fold},${h}`}
-            fill="url(#ribbonFill)"
-          />
-        </Svg>
-      </View>
-    </View>
-  );
-}
-
 function RingText({ radius, small }: { radius: number; small?: boolean }) {
   const chars = [...'PORTFOLIO · '.repeat(Math.max(2, Math.round(radius / 45)))];
   const stepDeg = 360 / chars.length;
@@ -356,27 +318,6 @@ const dealIn = (i: number) =>
     animationFillMode: 'backwards',
   }) as object as ViewStyle;
 
-const ribbonDrop = {
-  animationKeyframes: [{ from: { transform: [{ scaleY: 0 }] }, to: { transform: [{ scaleY: 1 }] } }],
-  animationDuration: '1000ms',
-  animationTimingFunction: 'cubic-bezier(0.7, 0, 0.2, 1)',
-  animationFillMode: 'both',
-} as object as ViewStyle;
-
-const ribbonSway = {
-  animationKeyframes: [
-    {
-      '0%': { transform: [{ rotate: '-1.6deg' }] },
-      '50%': { transform: [{ rotate: '1.6deg' }] },
-      '100%': { transform: [{ rotate: '-1.6deg' }] },
-    },
-  ],
-  animationDuration: '5s',
-  animationIterationCount: 'infinite',
-  animationTimingFunction: 'ease-in-out',
-  transformOrigin: 'top center',
-} as object as ViewStyle;
-
 const echoAnim = {
   animationKeyframes: [
     {
@@ -395,20 +336,36 @@ const styles = StyleSheet.create({
   plus: { position: 'absolute', ...sans('500') },
   star: { position: 'absolute' },
   titleBlock: { width: '100%', maxWidth: 1400, alignSelf: 'center' },
-  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 3 },
-  welcome: { ...sans('700'), color: colors.plum, letterSpacing: 1.8 },
+  header: {
+    width: '100%',
+    backgroundColor: 'rgba(255, 249, 244, 0.85)',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+    zIndex: 3,
+  },
+  headerInner: {
+    width: '100%',
+    maxWidth: 1400,
+    alignSelf: 'center',
+    height: 72,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  headerRight: { ...sans('600'), fontSize: 12, letterSpacing: 2, color: colors.plumSoft },
+  welcome: { ...sans('700'), fontSize: 13, color: colors.plum, letterSpacing: 2.2 },
   monogram: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     borderWidth: 1.5,
     borderColor: colors.plum,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  monogramText: { ...serif('600'), fontSize: 16, color: colors.plum },
+  monogramText: { ...serif('600'), fontSize: 14, color: colors.plum },
   titleStage: { alignItems: 'center', marginTop: 12 },
-  ribbon: { position: 'absolute', alignSelf: 'center', transformOrigin: 'top' } as object,
   echo: { position: 'absolute', alignSelf: 'center', top: 0 },
   nameWrap: { position: 'absolute', left: 0, right: 0 },
   tri: { position: 'absolute', fontSize: 16, color: colors.plum },
