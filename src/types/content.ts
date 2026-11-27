@@ -27,20 +27,17 @@ export type Profile = {
 };
 
 export type SkillCategory =
-  | 'programming'
+  | 'languages'
+  | 'frontend'
   | 'database'
-  | 'networking'
-  | 'data_analytics'
+  | 'analytics'
   | 'ai'
-  | 'systems'
-  | 'tools';
+  | 'design'
+  | 'infra';
 
 export type Skill = {
   category: SkillCategory;
   name: string;
-  description: string;
-  /** Optional, set manually. Never shown as a percentage. */
-  level?: 'Beginner' | 'Intermediate' | 'Advanced';
 };
 
 export type AchievementCategory =

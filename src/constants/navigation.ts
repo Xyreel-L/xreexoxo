@@ -3,7 +3,7 @@ import { gallery } from '@/data/gallery';
 const ALL_ITEMS = [
   { id: 'home', label: 'Home' },
   { id: 'about', label: 'About' },
-  { id: 'skills', label: 'Skills' },
+  { id: 'skills', label: 'Tech Stack' },
   { id: 'achievements', label: 'Achievements' },
   { id: 'projects', label: 'Projects' },
   { id: 'gallery', label: 'Gallery' },

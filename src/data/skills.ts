@@ -1,31 +1,27 @@
 import type { Skill, SkillCategory } from '@/types/content';
 
+/** Tech stack groups, in display order. Empty groups are hidden. */
 export const skillCategories: { key: SkillCategory; label: string }[] = [
-  { key: 'programming', label: 'Programming and Software Development' },
-  { key: 'database', label: 'Database Management' },
-  { key: 'networking', label: 'Networking and Infrastructure' },
-  { key: 'data_analytics', label: 'Data Analytics' },
-  { key: 'ai', label: 'Artificial Intelligence' },
-  { key: 'systems', label: 'Computer Systems and Operating Systems' },
-  { key: 'tools', label: 'Development Tools' },
+  { key: 'languages', label: 'Languages' },
+  { key: 'frontend', label: 'Frontend' },
+  { key: 'database', label: 'Database' },
+  { key: 'analytics', label: 'Analytics' },
+  { key: 'ai', label: 'AI-Assisted Development' },
+  { key: 'design', label: 'Design Tools' },
+  { key: 'infra', label: 'Infrastructure & Tools' },
 ];
 
-/**
- * ✏️ Only list skills you are confident about. Categories with no skills are hidden.
- * `level` is optional and never shown as a percentage.
- *
- * TODO: confirm this starter list — it is based on your own GitHub repositories,
- * your TESDA certification, and your CCNA coursework.
- */
-export const skills: Skill[] = [
-  { category: 'programming', name: 'React Native', description: 'Cross-platform mobile and web interfaces with React Native and Expo.' },
-  { category: 'programming', name: 'TypeScript / JavaScript', description: 'Building typed, component-based application code.' },
-  { category: 'database', name: 'SQL and Relational Databases', description: 'Designing tables and writing queries for application data.' },
-  { category: 'database', name: 'Supabase', description: 'PostgreSQL database, authentication, and storage for app backends.' },
-  { category: 'networking', name: 'Routing and Switching', description: 'Configuring switches, routers, and wireless networks.' },
-  { category: 'networking', name: 'Network Addressing', description: 'IPv4 addressing, subnetting, and basic troubleshooting.' },
-  { category: 'systems', name: 'Computer Systems Servicing', description: 'Assembling, maintaining, and troubleshooting computer hardware.' },
-  { category: 'systems', name: 'Windows Configuration', description: 'Installing, configuring, and managing Windows devices.' },
-  { category: 'tools', name: 'Git and GitHub', description: 'Version control, branching, and collaborating through repositories.' },
-  { category: 'tools', name: 'VS Code', description: 'Primary editor and development environment.' },
-];
+/** ✏️ Add or remove technologies here. */
+const stack: Record<SkillCategory, string[]> = {
+  languages: ['Java', 'JavaScript', 'TypeScript', 'C#', 'C++', 'Python', 'SQL', 'PHP'],
+  frontend: ['React', 'React Native (Expo)', 'Next.js', 'Java Swing', 'HTML', 'CSS', 'Tailwind CSS'],
+  database: ['MySQL', 'PostgreSQL'],
+  analytics: ['Power BI', 'Tableau', 'KNIME', 'Data Modeling', 'Forecasting'],
+  ai: ['Claude Code', 'OpenCode'],
+  design: ['Figma'],
+  infra: ['Git / GitHub', 'Vercel', 'XAMPP', 'Windows', 'Basic Networking'],
+};
+
+export const skills: Skill[] = skillCategories.flatMap((c) =>
+  stack[c.key].map((name) => ({ category: c.key, name })),
+);

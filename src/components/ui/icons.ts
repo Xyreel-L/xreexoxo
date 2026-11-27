@@ -42,3 +42,8 @@ export { default as ChevronRight } from 'lucide-react-native/icons/chevron-right
 export { default as ArrowUp } from 'lucide-react-native/icons/arrow-up';
 export { default as Images } from 'lucide-react-native/icons/images';
 export { default as Sparkles } from 'lucide-react-native/icons/sparkles';
+export { default as CodeXml } from 'lucide-react-native/icons/code-xml';
+export { default as LayoutTemplate } from 'lucide-react-native/icons/layout-template';
+export { default as Palette } from 'lucide-react-native/icons/palette';
+export { default as ServerCog } from 'lucide-react-native/icons/server-cog';
+export { default as Bot } from 'lucide-react-native/icons/bot';
