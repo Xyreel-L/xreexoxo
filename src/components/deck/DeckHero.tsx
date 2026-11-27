@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Platform, Pressable, PressableStateCallbackType, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { useViewport } from '@/hooks/useViewport';
-import Svg, { Text as SvgText } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Polygon, Stop, Text as SvgText } from 'react-native-svg';
 import { colors, sans, serif, shadow } from '@/theme/tokens';
 import { profile } from '@/data/profile';
 import { initials } from '@/utils/text';
@@ -32,6 +32,7 @@ const MARKS = (() => {
 })();
 
 const SPEED = 9; // degrees per second the wheel turns
+const RING_SPEED = 24; // degrees per second for the PORTFOLIO text in the hub
 
 export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardRect) => void; paused: boolean }) {
   const { width: vw, height: vh } = useViewport();
@@ -53,7 +54,7 @@ export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardR
   const spacing = cardW * (isMobile ? 0.8 : 0.92);
   const R = spacing / (2 * Math.sin(((STEP / 2) * Math.PI) / 180));
   // Big hub filling the inside of the card ring; only its top half shows, as the footer.
-  const hubR = Math.max(isMobile ? 60 : 110, (R - cardH / 2) * 0.95);
+  const hubR = Math.max(40, R - cardH / 2 - (isMobile ? 18 : 30)); // fixed gap between hub and cards
   const topPad = 70;
   const pivotY = topPad + cardH / 2 + R; // hub centre, from the top of the wheel area
   const wheelH = pivotY; // clip at the hub's centre so it reads as a half circle
@@ -69,6 +70,8 @@ export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardR
   const cardRefs = useRef<Record<number, HTMLElement | null>>({});
   const hovered = useRef(false);
   const spin = useRef(0);
+  const ringRef = useRef<HTMLElement | null>(null);
+  const ringSpin = useRef(0);
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
 
@@ -83,6 +86,9 @@ export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardR
       last = now;
       if (!reduce && !pausedRef.current && !hovered.current) spin.current = (spin.current - SPEED * dt) % 360;
       if (wheelRef.current) wheelRef.current.style.transform = `rotate(${spin.current}deg)`;
+      // The PORTFOLIO text inside the hub always turns, the other way round.
+      if (!reduce) ringSpin.current = (ringSpin.current + RING_SPEED * dt) % 360;
+      if (ringRef.current) ringRef.current.style.transform = `rotate(${ringSpin.current}deg)`;
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -144,12 +150,10 @@ export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardR
         </View>
 
         <View style={[styles.titleStage, { height: titleSize * lines.length * 1.04 + titleSize * 0.55 }]}>
-          <View
-            style={[
-              styles.block,
-              blockAnim,
-              { width: clamp(W * 0.13, 60, 170), height: titleSize * (lines.length * 1.04 + 0.95), top: -titleSize * 0.3 },
-            ]}
+          <Ribbon
+            width={clamp(W * 0.12, 56, 150)}
+            height={titleSize * (lines.length * 1.04 + 1.25)}
+            top={-titleSize * 0.42}
           />
           <View style={[styles.echo, echoAnim]} aria-hidden>
             <Svg width={echoWidth} height={titleSize * lines.length * 1.04 + 10}>
@@ -239,7 +243,12 @@ export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardR
           style={[styles.hub, { width: hubR * 2, height: hubR * 2, marginLeft: -hubR, top: pivotY - hubR }]}
         >
           <View style={[styles.hubRing, { borderRadius: hubR }]} />
-          <View style={[StyleSheet.absoluteFill, spinAnim]}>
+          <View
+            ref={(el) => {
+              ringRef.current = el as unknown as HTMLElement | null;
+            }}
+            style={StyleSheet.absoluteFill}
+          >
             <RingText radius={hubR - (isMobile ? 16 : 24)} small={isMobile} />
           </View>
           <View style={[styles.meWrap, { top: hubR * 0.42 }]}>
@@ -250,6 +259,43 @@ export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardR
       </View>
 
       <Text style={styles.hint}>xreexoxo {new Date().getFullYear()}</Text>
+    </View>
+  );
+}
+
+/**
+ * Hanging ribbon behind the name: a rose band with a folded top and a
+ * swallowtail notch, dropping in and then swaying gently.
+ */
+function Ribbon({ width: w, height: h, top }: { width: number; height: number; top: number }) {
+  const notch = w * 0.42;
+  const fold = w * 0.16;
+  return (
+    <View style={[styles.ribbon, ribbonDrop, { width: w + fold * 2, height: h, top }]} aria-hidden>
+      <View style={[StyleSheet.absoluteFill, ribbonSway]}>
+        <Svg width={w + fold * 2} height={h}>
+          <Defs>
+            <LinearGradient id="ribbonFill" x1="0" y1="0" x2="1" y2="0">
+              <Stop offset="0" stopColor={colors.mauve} />
+              <Stop offset="0.18" stopColor={colors.rose} />
+              <Stop offset="0.82" stopColor={colors.rose} />
+              <Stop offset="1" stopColor={colors.mauve} />
+            </LinearGradient>
+          </Defs>
+          {/* folded tabs at the top corners */}
+          <Polygon points={`0,${fold} ${fold},0 ${fold},${fold * 2}`} fill={colors.mauveDeep} opacity={0.75} />
+          <Polygon
+            points={`${w + fold * 2},${fold} ${w + fold},0 ${w + fold},${fold * 2}`}
+            fill={colors.mauveDeep}
+            opacity={0.75}
+          />
+          {/* band with swallowtail end */}
+          <Polygon
+            points={`${fold},0 ${w + fold},0 ${w + fold},${h} ${fold + w / 2},${h - notch} ${fold},${h}`}
+            fill="url(#ribbonFill)"
+          />
+        </Svg>
+      </View>
     </View>
   );
 }
@@ -310,11 +356,25 @@ const dealIn = (i: number) =>
     animationFillMode: 'backwards',
   }) as object as ViewStyle;
 
-const blockAnim = {
+const ribbonDrop = {
   animationKeyframes: [{ from: { transform: [{ scaleY: 0 }] }, to: { transform: [{ scaleY: 1 }] } }],
-  animationDuration: '900ms',
+  animationDuration: '1000ms',
   animationTimingFunction: 'cubic-bezier(0.7, 0, 0.2, 1)',
   animationFillMode: 'both',
+} as object as ViewStyle;
+
+const ribbonSway = {
+  animationKeyframes: [
+    {
+      '0%': { transform: [{ rotate: '-1.6deg' }] },
+      '50%': { transform: [{ rotate: '1.6deg' }] },
+      '100%': { transform: [{ rotate: '-1.6deg' }] },
+    },
+  ],
+  animationDuration: '5s',
+  animationIterationCount: 'infinite',
+  animationTimingFunction: 'ease-in-out',
+  transformOrigin: 'top center',
 } as object as ViewStyle;
 
 const echoAnim = {
@@ -328,13 +388,6 @@ const echoAnim = {
   animationDuration: '6s',
   animationIterationCount: 'infinite',
   animationTimingFunction: 'ease-in-out',
-} as object as ViewStyle;
-
-const spinAnim = {
-  animationKeyframes: [{ from: { transform: [{ rotate: '0deg' }] }, to: { transform: [{ rotate: '360deg' }] } }],
-  animationDuration: '18s',
-  animationIterationCount: 'infinite',
-  animationTimingFunction: 'linear',
 } as object as ViewStyle;
 
 const styles = StyleSheet.create({
@@ -355,7 +408,7 @@ const styles = StyleSheet.create({
   },
   monogramText: { ...serif('600'), fontSize: 16, color: colors.plum },
   titleStage: { alignItems: 'center', marginTop: 12 },
-  block: { position: 'absolute', backgroundColor: colors.rose, alignSelf: 'center', transformOrigin: 'top' } as object,
+  ribbon: { position: 'absolute', alignSelf: 'center', transformOrigin: 'top' } as object,
   echo: { position: 'absolute', alignSelf: 'center', top: 0 },
   nameWrap: { position: 'absolute', left: 0, right: 0 },
   tri: { position: 'absolute', fontSize: 16, color: colors.plum },
@@ -388,7 +441,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(64,51,58,0.08)',
-    ...shadow.lifted,
+    // soft drop shadow that travels with each card as the wheel turns
+    shadowColor: '#5A3A47',
+    shadowOpacity: 0.22,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 12 },
   } as object,
   hint: { ...sans('600'), fontSize: 13, letterSpacing: 1.2, color: colors.plumSoft, textAlign: 'center', paddingVertical: 24 },
 });
