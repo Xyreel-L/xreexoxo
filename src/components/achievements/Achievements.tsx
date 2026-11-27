@@ -94,41 +94,6 @@ export function Achievements({ onMeasure }: { onMeasure: (id: string, y: number)
         intro="A national qualification, international IT examinations, and Cisco Networking Academy training. Select any card for details."
       />
 
-      {/* Issuer overview — doubles as a filter */}
-      <View style={styles.overview}>
-        {achievementCategories.map((c) => {
-          const Icon = categoryIcon[c.key];
-          const active = filter === c.key;
-          return (
-            <Pressable
-              key={c.key}
-              role="button"
-              aria-pressed={active}
-              accessibilityLabel={`${c.issuer}: ${counts[c.key] ?? 0}. Show only ${c.issuer}`}
-              onPress={() => setFilter(active ? 'all' : c.key)}
-              style={(s) => {
-                const { hovered, focused } = s as WebState;
-                return [
-                  styles.stat,
-                  hovered && !active && styles.statHover,
-                  active && styles.statActive,
-                  focused && styles.focused,
-                ];
-              }}
-            >
-              <View style={[styles.statIcon, active && { backgroundColor: 'rgba(255,255,255,0.12)' }]}>
-                <Icon size={20} color={active ? colors.blush : colors.mauve} strokeWidth={1.7} />
-              </View>
-              <Text style={[styles.statNumber, active && { color: colors.cream }]}>{counts[c.key] ?? 0}</Text>
-              <Text style={[styles.statIssuer, active && { color: colors.cream }]}>{c.issuer}</Text>
-              <Text style={[styles.statKind, active && { color: colors.blush }]} numberOfLines={2}>
-                {c.kind}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
       <View style={styles.toolbar}>
         <View style={styles.filters} role="tablist" aria-label="Filter achievements">
           <FilterChip label="All" count={counts.all!} active={filter === 'all'} onPress={() => setFilter('all')} />
@@ -412,34 +377,6 @@ function DetailFact({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  overview: { flexDirection: 'row', flexWrap: 'wrap', gap: space.lg, marginBottom: space.xxl },
-  stat: {
-    flexGrow: 1,
-    flexBasis: 220,
-    gap: 4,
-    padding: space.xl,
-    borderRadius: radius.lg,
-    backgroundColor: colors.cream,
-    borderWidth: 1,
-    borderColor: colors.line,
-    cursor: 'pointer',
-    transitionProperty: 'background-color, border-color, transform',
-    transitionDuration: '200ms',
-  },
-  statHover: { borderColor: colors.rose, transform: [{ translateY: -3 }] },
-  statActive: { backgroundColor: colors.plum, borderColor: colors.plum },
-  statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.md,
-    backgroundColor: colors.ivory,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: space.sm,
-  },
-  statNumber: { ...serif('500'), fontSize: 40, lineHeight: 44, color: colors.mauve, letterSpacing: -1 },
-  statIssuer: { ...sans('700'), fontSize: 15, color: colors.plum },
-  statKind: { ...sans('500'), fontSize: 12.5, lineHeight: 18, color: colors.plumSoft },
   toolbar: {
     flexDirection: 'row',
     flexWrap: 'wrap',
