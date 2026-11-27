@@ -1,8 +1,10 @@
+import { useContext } from 'react';
 import { StyleSheet, View, ViewProps, ViewStyle } from 'react-native';
 import { colors, layout, space } from '@/theme/tokens';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { Body, Eyebrow, H2 } from './Typography';
 import { InView } from './InView';
+import { CompactSection } from './SectionContext';
 
 export function Container({ style, ...rest }: ViewProps) {
   const { isMobile } = useBreakpoint();
@@ -22,16 +24,20 @@ type SectionProps = ViewProps & {
 
 export function Section({ id, tone = 'cream', onMeasure, style, children, ...rest }: SectionProps) {
   const { isMobile } = useBreakpoint();
+  const compact = useContext(CompactSection);
+  // Inside a popup every light section shares one background so the modal looks uniform.
+  const resolved = compact && tone !== 'plum' ? 'ivory' : tone;
   const bg: ViewStyle = {
-    backgroundColor: tone === 'ivory' ? colors.ivory : tone === 'plum' ? colors.plum : colors.cream,
+    backgroundColor: resolved === 'ivory' ? colors.ivory : resolved === 'plum' ? colors.plum : colors.cream,
   };
+  const padding = compact ? (isMobile ? space.xl : space.xxl + 4) : isMobile ? space.huge : space.giant;
   return (
     <View
       nativeID={id}
       role="region"
       aria-labelledby={`${id}-title`}
       onLayout={(e) => onMeasure?.(id, e.nativeEvent.layout.y)}
-      style={[{ paddingVertical: isMobile ? space.huge : space.giant }, bg, style]}
+      style={[{ paddingVertical: padding }, bg, style]}
       {...rest}
     >
       <Container>

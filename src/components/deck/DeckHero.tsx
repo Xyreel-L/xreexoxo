@@ -1,96 +1,148 @@
-import { useRef } from 'react';
-import { Pressable, PressableStateCallbackType, StyleSheet, Text, View, ViewStyle, useWindowDimensions } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Platform, Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { useViewport } from '@/hooks/useViewport';
 import Svg, { Text as SvgText } from 'react-native-svg';
 import { colors, sans, serif, shadow } from '@/theme/tokens';
 import { profile } from '@/data/profile';
 import { initials } from '@/utils/text';
+import { AnimatedName } from './AnimatedName';
 import { CENTER_ID, DECK, type DeckCard } from './cards';
-
-type WebState = PressableStateCallbackType & { hovered?: boolean; focused?: boolean };
 
 export type CardRect = { left: number; top: number; width: number; height: number; angle: number };
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
-/** Decorative marks: [x%, y%, kind, size, delay(ms)] — 'p' = plus, 's' = star. */
-const MARKS: [number, number, 'p' | 's', number, number][] = [
-  [4, 6, 'p', 30, 0],
-  [30, 4, 's', 22, 400],
-  [52, 9, 'p', 22, 900],
-  [74, 5, 'p', 30, 200],
-  [94, 14, 's', 26, 1300],
-  [2, 38, 's', 20, 700],
-  [97, 40, 'p', 26, 1100],
-  [12, 58, 'p', 22, 1500],
-  [88, 60, 's', 22, 300],
-  [6, 82, 's', 26, 1000],
-  [22, 92, 'p', 20, 600],
-  [80, 90, 'p', 26, 1700],
-  [95, 78, 's', 18, 500],
-  [42, 70, 's', 14, 1200],
-  [60, 64, 'p', 16, 800],
-];
+/** Deterministic star/plus field: varied sizes, spread over the whole hero. */
+const MARKS = (() => {
+  let seed = 7;
+  const rand = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+  return Array.from({ length: 42 }, (_, i) => {
+    const star = i % 3 !== 0;
+    return {
+      x: 2 + rand() * 96,
+      y: 2 + rand() * 94,
+      star,
+      size: star ? 7 + Math.round(rand() * 26) : 14 + Math.round(rand() * 18),
+      delay: Math.round(rand() * 3000),
+      dur: 2400 + Math.round(rand() * 2600),
+    };
+  });
+})();
 
-export function DeckHero({ onOpen }: { onOpen: (id: string, from?: CardRect) => void }) {
-  const { width: vw, height: vh } = useWindowDimensions();
+const SPEED = 7; // degrees per second around the orbit
+
+export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardRect) => void; paused: boolean }) {
+  const { width: vw, height: vh } = useViewport();
   const W = Math.min(vw, 1400);
   const isMobile = vw < 640;
 
-  const nameParts = profile.fullName.toUpperCase().split(' ');
-  const first = nameParts.slice(0, -1).join(' ');
-  const last = nameParts.slice(-1)[0] ?? '';
-
-  // Name: one line on desktop, two lines on phones.
-  const titleSize = isMobile ? clamp(W * 0.2, 48, 110) : clamp(Math.min(W * 0.085, vh * 0.15), 64, 150);
+  const name = profile.fullName.toUpperCase();
+  const parts = name.split(' ');
+  const lines = isMobile ? [parts.slice(0, -1).join(' '), parts.slice(-1)[0] ?? ''] : [name];
+  const titleSize = isMobile ? clamp(W * 0.17, 44, 100) : clamp(Math.min(W * 0.085, vh * 0.14), 60, 140);
   const side = isMobile ? 20 : 48;
 
-  // Fan geometry — sized from both width and height so it fills the screen.
-  const cardW = isMobile ? clamp(W * 0.23, 90, 140) : clamp(Math.min(W * 0.15, vh * 0.25), 140, 230);
+  // ---- orbit geometry
+  const cardW = isMobile ? clamp(W * 0.22, 84, 120) : clamp(Math.min(W * 0.14, vh * 0.23), 130, 215);
   const cardH = cardW * 1.4;
-  const step = isMobile ? 18 : 18; // degrees between neighbouring cards
-  // Radius chosen so neighbours overlap only slightly (keeps card text uncovered).
-  const spacing = cardW * (isMobile ? 0.8 : 0.92);
-  const R = spacing / (2 * Math.sin((step / 2) * (Math.PI / 180)));
-  const centerIndex = DECK.findIndex((c) => c.id === CENTER_ID);
-  const fanHeight = R + cardH * 0.62 + 70;
-  const ringR = R * 0.55;
+  const Rx = isMobile ? W * 0.36 : Math.min(W * 0.34, 500);
+  const Ry = Rx * (isMobile ? 0.5 : 0.27);
+  const hubR = isMobile ? 48 : 82;
+  const hubY = Ry + cardH * 0.4 + 30;
+  const orbitH = hubY + Ry + cardH * 0.56 + 40;
+  const n = DECK.length;
+  const startIndex = DECK.findIndex((c) => c.id === CENTER_ID);
 
-  const refs = useRef<Record<string, unknown>>({});
+  const refs = useRef<Record<string, HTMLElement | null>>({});
+  const hovered = useRef<string | null>(null);
+  const base = useRef(90); // degrees; 90° = front-centre
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
 
-  const open = (card: DeckCard, angle: number) => {
-    const el = refs.current[card.id] as HTMLElement | undefined;
+  /** Position of card i for a given base angle. */
+  const place = (i: number, baseDeg: number, lift = false) => {
+    const theta = ((baseDeg + (i - startIndex) * (360 / n)) * Math.PI) / 180;
+    const x = Rx * Math.cos(theta);
+    const y = Ry * Math.sin(theta);
+    const depth = (Math.sin(theta) + 1) / 2; // 0 back … 1 front
+    const scale = (0.68 + 0.36 * depth) * (lift ? 1.08 : 1);
+    const rot = lift ? 0 : -Math.cos(theta) * 9;
+    return {
+      x,
+      y: y - (lift ? 18 : 0),
+      scale,
+      rot,
+      z: lift ? 200 : Math.round(depth * 100),
+      shade: 0.55 + 0.45 * depth,
+    };
+  };
+
+  // Animation loop: writes transforms straight to the DOM (no React re-render per frame).
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    let last = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      const dt = Math.min(64, now - last) / 1000;
+      last = now;
+      if (!reduce && !pausedRef.current && !hovered.current) base.current = (base.current + SPEED * dt) % 360;
+      DECK.forEach((c, i) => {
+        const el = refs.current[c.id];
+        if (!el) return;
+        const p = place(i, base.current, hovered.current === c.id);
+        el.style.transform = `translate(${p.x}px, ${p.y}px) scale(${p.scale}) rotate(${p.rot}deg)`;
+        el.style.zIndex = String(p.z);
+        el.style.filter = `brightness(${0.85 + 0.15 * p.shade})`;
+      });
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [Rx, Ry, n]);
+
+  const open = (card: DeckCard, i: number) => {
+    const el = refs.current[card.id];
+    const p = place(i, base.current, true);
     if (el && typeof el.getBoundingClientRect === 'function') {
       const b = el.getBoundingClientRect();
-      const cx = b.left + b.width / 2;
-      const cy = b.top + b.height / 2;
-      onOpen(card.id, { left: cx - cardW / 2, top: cy - cardH / 2, width: cardW, height: cardH, angle });
+      const w = cardW * p.scale;
+      const h = cardH * p.scale;
+      onOpen(card.id, { left: b.left + b.width / 2 - w / 2, top: b.top + b.height / 2 - h / 2, width: w, height: h, angle: 0 });
     } else {
       onOpen(card.id);
     }
   };
 
-  const echoWidth = Math.min(W - side * 2, titleSize * (isMobile ? 5 : 9.5));
+  const echoWidth = Math.min(W - side * 2, titleSize * (isMobile ? 5.2 : 9.8));
 
   return (
     <View style={styles.wrap} nativeID="home">
-      {/* plus + star field */}
+      {/* star + plus field */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none" aria-hidden>
-        {MARKS.filter((_, i) => !isMobile || i % 2 === 0).map(([x, y, kind, size, delay], i) => (
+        {MARKS.filter((_, i) => !isMobile || i % 2 === 0).map((m, i) => (
           <Text
             key={i}
             style={[
-              kind === 'p' ? styles.plus : styles.star,
-              { left: `${x}%`, top: `${y}%`, fontSize: size * (isMobile ? 0.8 : 1), lineHeight: size },
-              twinkle(delay, kind === 's'),
+              m.star ? styles.star : styles.plus,
+              {
+                left: `${m.x}%`,
+                top: `${m.y}%`,
+                fontSize: m.size * (isMobile ? 0.75 : 1),
+                lineHeight: m.size,
+                color: m.star ? (i % 2 ? colors.mauve : colors.rose) : colors.rose,
+              },
+              twinkle(m.delay, m.dur, m.star),
             ]}
           >
-            {kind === 'p' ? '+' : '✦'}
+            {m.star ? '✦' : '+'}
           </Text>
         ))}
       </View>
 
-      {/* ---------- Title block ---------- */}
-      <View style={[styles.titleBlock, { paddingHorizontal: side, paddingTop: isMobile ? 28 : 44 }]}>
+      {/* ---------- Title ---------- */}
+      <View style={[styles.titleBlock, { paddingHorizontal: side, paddingTop: isMobile ? 24 : 40 }]}>
         <View style={styles.topRow}>
           <Text style={[styles.welcome, { fontSize: isMobile ? 13 : 18, lineHeight: isMobile ? 18 : 24 }]}>
             WELCOME TO{'\n'}MY PORTFOLIO
@@ -100,26 +152,21 @@ export function DeckHero({ onOpen }: { onOpen: (id: string, from?: CardRect) => 
           </View>
         </View>
 
-        <View style={[styles.titleStage, { height: titleSize * (isMobile ? 2.6 : 1.7) }]}>
+        <View style={[styles.titleStage, { height: titleSize * lines.length * 1.04 + titleSize * 0.55 }]}>
           <View
             style={[
               styles.block,
               blockAnim,
-              {
-                width: clamp(W * 0.13, 64, 180),
-                height: titleSize * (isMobile ? 2.9 : 2.1),
-                top: -titleSize * 0.4,
-              },
+              { width: clamp(W * 0.13, 60, 170), height: titleSize * (lines.length * 1.04 + 0.95), top: -titleSize * 0.3 },
             ]}
           />
-          {/* outlined echo, drifting */}
-          <View style={[styles.echo, echoAnim, { top: titleSize * 0.02 }]} aria-hidden>
-            <Svg width={echoWidth} height={titleSize * (isMobile ? 2.2 : 1.15)}>
-              {(isMobile ? [first, last] : [`${first} ${last}`]).map((line, i) => (
+          <View style={[styles.echo, echoAnim]} aria-hidden>
+            <Svg width={echoWidth} height={titleSize * lines.length * 1.04 + 10}>
+              {lines.map((line, i) => (
                 <SvgText
                   key={i}
                   x="50%"
-                  y={titleSize * (0.9 + i * 1.02)}
+                  y={titleSize * (0.84 + i * 1.04)}
                   textAnchor="middle"
                   fontSize={titleSize}
                   fontFamily="Fraunces, Georgia, serif"
@@ -134,126 +181,95 @@ export function DeckHero({ onOpen }: { onOpen: (id: string, from?: CardRect) => 
               ))}
             </Svg>
           </View>
-          <Text
-            role="heading"
-            aria-level={1}
-            style={[
-              styles.title,
-              titleAnim,
-              { fontSize: titleSize, lineHeight: titleSize * 1.02, top: titleSize * 0.36 },
-            ]}
-          >
-            {isMobile ? `${first}\n${last}` : `${first} ${last}`}
-          </Text>
+          <View style={[styles.nameWrap, { top: titleSize * 0.3 }]}>
+            <AnimatedName lines={lines} size={titleSize} />
+          </View>
           {!isMobile ? (
             <>
-              <Text style={[styles.tri, { left: 0, top: titleSize * 0.72 }]}>▶</Text>
-              <Text style={[styles.tri, { right: 0, top: titleSize * 0.72 }]}>◀</Text>
+              <Text style={[styles.tri, { left: 0, top: titleSize * 0.65 }]}>▶</Text>
+              <Text style={[styles.tri, { right: 0, top: titleSize * 0.65 }]}>◀</Text>
             </>
           ) : null}
         </View>
       </View>
 
-      {/* ---------- Fan ---------- */}
-      <View style={[styles.fan, { height: fanHeight }]}>
+      {/* ---------- Orbit ---------- */}
+      <View style={[styles.orbit, { height: orbitH }]}>
         <View
-          style={[
-            styles.ringWrap,
-            { width: ringR * 2, height: ringR * 2, left: '50%', marginLeft: -ringR, top: fanHeight - ringR },
-          ]}
           aria-hidden
-        >
-          <View style={[styles.ringDashed, { borderRadius: ringR }]} />
-          <View style={[StyleSheet.absoluteFill, spinAnim]}>
-            <RingText radius={ringR - 20} />
-          </View>
-        </View>
+          style={[
+            styles.path,
+            { width: Rx * 2, height: Ry * 2, borderRadius: Rx, left: '50%', marginLeft: -Rx, top: hubY - Ry },
+          ]}
+        />
 
         <Pressable
           onPress={() => onOpen(CENTER_ID)}
           accessibilityLabel="Open About Me"
           role="button"
-          style={[styles.me, { top: fanHeight - ringR * 0.42 }]}
+          style={[styles.hub, { width: hubR * 2, height: hubR * 2, marginLeft: -hubR, top: hubY - hubR }]}
         >
+          <View style={[styles.hubRing, { borderRadius: hubR }]} />
+          <View style={[StyleSheet.absoluteFill, spinAnim]}>
+            <RingText radius={hubR - 14} small={isMobile} />
+          </View>
           <Text style={styles.meArrow}>▲</Text>
-          <Text style={styles.meText}>ME</Text>
+          <Text style={[styles.meText, isMobile && { fontSize: 15 }]}>ME</Text>
         </Pressable>
 
         {DECK.map((card, i) => {
-          const offset = i - centerIndex;
-          const angle = offset * step;
-          const rad = (angle * Math.PI) / 180;
-          const x = R * Math.sin(rad);
-          const y = -R * Math.cos(rad);
-          const base: ViewStyle = {
+          const p = place(i, 90);
+          const initial: ViewStyle = {
             width: cardW,
             height: cardH,
             left: '50%',
-            marginLeft: x - cardW / 2,
-            top: fanHeight + y - cardH / 2,
-            backgroundColor: card.bg,
-            zIndex: 20 - Math.abs(offset),
+            marginLeft: -cardW / 2,
+            top: hubY - cardH / 2,
+            zIndex: p.z,
+            transform: [{ translateX: p.x }, { translateY: p.y }, { scale: p.scale }, { rotate: `${p.rot}deg` }],
           };
-          const deal = {
-            animationKeyframes: [
-              {
-                from: { opacity: 0, transform: [{ translateY: 260 }, { rotate: '0deg' }, { scale: 0.85 }] },
-                to: { opacity: 1, transform: [{ translateY: 0 }, { rotate: `${angle}deg` }, { scale: 1 }] },
-              },
-            ],
-            animationDuration: '900ms',
-            animationDelay: `${250 + Math.abs(offset) * 110}ms`,
-            animationTimingFunction: 'cubic-bezier(0.2, 0.8, 0.25, 1)',
-            animationFillMode: 'backwards',
-          } as object as ViewStyle;
-
           return (
             <Pressable
               key={card.id}
               ref={(el) => {
-                refs.current[card.id] = el;
+                refs.current[card.id] = el as unknown as HTMLElement | null;
               }}
               role="button"
               accessibilityLabel={`Open ${card.title}`}
-              onPress={() => open(card, angle)}
-              style={(s) => {
-                const { hovered, focused, pressed } = s as WebState;
-                const lift = hovered || focused;
-                return [
-                  styles.card,
-                  base,
-                  deal,
-                  {
-                    transform: [
-                      { translateY: lift ? -36 : 0 },
-                      { rotate: `${lift ? angle * 0.55 : angle}deg` },
-                      { scale: pressed ? 0.97 : lift ? 1.06 : 1 },
-                    ],
-                  },
-                  lift && { zIndex: 40 },
-                  focused && styles.cardFocus,
-                ];
-              }}
+              onHoverIn={() => (hovered.current = card.id)}
+              onHoverOut={() => (hovered.current = null)}
+              onFocus={() => (hovered.current = card.id)}
+              onBlur={() => (hovered.current = null)}
+              onPress={() => open(card, i)}
+              style={[styles.slot, initial]}
             >
-              <card.Face w={cardW} />
+              <View style={[styles.card, { backgroundColor: card.bg }, dealIn(i)]}>
+                <card.Face w={cardW} />
+              </View>
             </Pressable>
           );
         })}
       </View>
 
-      <Text style={styles.hint}>{isMobile ? 'Tap a card to open it' : 'Pick a card to open it'}</Text>
+      <Text style={styles.hint}>{isMobile ? 'Tap a card to open it' : 'Hover to pause · click a card to open it'}</Text>
     </View>
   );
 }
 
-function RingText({ radius }: { radius: number }) {
-  const name = profile.fullName.toUpperCase();
-  const chars = [...`PORTFOLIO · ${name} · PORTFOLIO · ${name} · `];
+function RingText({ radius, small }: { radius: number; small?: boolean }) {
+  const chars = [...'PORTFOLIO · PORTFOLIO · '];
   const stepDeg = 360 / chars.length;
   return (
     <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
       {chars.map((ch, i) => (
-        <Text key={i} style={[styles.ringChar, { transform: [{ rotate: `${i * stepDeg}deg` }, { translateY: -radius }] }]}>
+        <Text
+          key={i}
+          style={[
+            styles.ringChar,
+            small && { fontSize: 9 },
+            { transform: [{ rotate: `${i * stepDeg}deg` }, { translateY: -radius }] },
+          ]}
+        >
           {ch}
         </Text>
       ))}
@@ -261,41 +277,45 @@ function RingText({ radius }: { radius: number }) {
   );
 }
 
-const twinkle = (delay: number, star: boolean) =>
+const twinkle = (delay: number, dur: number, star: boolean) =>
   ({
     animationKeyframes: [
       star
         ? {
-            '0%': { opacity: 0.35, transform: [{ scale: 0.8 }, { rotate: '0deg' }] },
-            '50%': { opacity: 1, transform: [{ scale: 1.15 }, { rotate: '20deg' }] },
-            '100%': { opacity: 0.35, transform: [{ scale: 0.8 }, { rotate: '0deg' }] },
+            '0%': { opacity: 0.25, transform: [{ scale: 0.7 }, { rotate: '0deg' }] },
+            '50%': { opacity: 1, transform: [{ scale: 1.15 }, { rotate: '25deg' }] },
+            '100%': { opacity: 0.25, transform: [{ scale: 0.7 }, { rotate: '0deg' }] },
           }
         : {
-            '0%': { opacity: 0.55, transform: [{ rotate: '0deg' }] },
+            '0%': { opacity: 0.45, transform: [{ rotate: '0deg' }] },
             '50%': { opacity: 1, transform: [{ rotate: '90deg' }] },
-            '100%': { opacity: 0.55, transform: [{ rotate: '0deg' }] },
+            '100%': { opacity: 0.45, transform: [{ rotate: '0deg' }] },
           },
     ],
-    animationDuration: star ? '3.2s' : '6s',
+    animationDuration: `${dur}ms`,
     animationDelay: `${delay}ms`,
     animationIterationCount: 'infinite',
     animationTimingFunction: 'ease-in-out',
+  }) as object as ViewStyle;
+
+const dealIn = (i: number) =>
+  ({
+    animationKeyframes: [
+      {
+        from: { opacity: 0, transform: [{ translateY: 120 }, { scale: 0.6 }] },
+        to: { opacity: 1, transform: [{ translateY: 0 }, { scale: 1 }] },
+      },
+    ],
+    animationDuration: '800ms',
+    animationDelay: `${400 + i * 120}ms`,
+    animationTimingFunction: 'cubic-bezier(0.2, 0.8, 0.25, 1)',
+    animationFillMode: 'backwards',
   }) as object as ViewStyle;
 
 const blockAnim = {
   animationKeyframes: [{ from: { transform: [{ scaleY: 0 }] }, to: { transform: [{ scaleY: 1 }] } }],
   animationDuration: '900ms',
   animationTimingFunction: 'cubic-bezier(0.7, 0, 0.2, 1)',
-  animationFillMode: 'both',
-} as object as ViewStyle;
-
-const titleAnim = {
-  animationKeyframes: [
-    { from: { opacity: 0, transform: [{ translateY: 30 }] }, to: { opacity: 1, transform: [{ translateY: 0 }] } },
-  ],
-  animationDuration: '800ms',
-  animationDelay: '300ms',
-  animationTimingFunction: 'cubic-bezier(0.2, 0.8, 0.25, 1)',
   animationFillMode: 'both',
 } as object as ViewStyle;
 
@@ -314,15 +334,15 @@ const echoAnim = {
 
 const spinAnim = {
   animationKeyframes: [{ from: { transform: [{ rotate: '0deg' }] }, to: { transform: [{ rotate: '360deg' }] } }],
-  animationDuration: '40s',
+  animationDuration: '18s',
   animationIterationCount: 'infinite',
   animationTimingFunction: 'linear',
 } as object as ViewStyle;
 
 const styles = StyleSheet.create({
   wrap: { backgroundColor: colors.cream, overflow: 'hidden', flexGrow: 1 },
-  plus: { position: 'absolute', color: colors.rose, ...sans('500') },
-  star: { position: 'absolute', color: colors.mauve },
+  plus: { position: 'absolute', ...sans('500') },
+  star: { position: 'absolute' },
   titleBlock: { width: '100%', maxWidth: 1400, alignSelf: 'center' },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 3 },
   welcome: { ...sans('700'), color: colors.plum, letterSpacing: 1.8 },
@@ -336,36 +356,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   monogramText: { ...serif('600'), fontSize: 16, color: colors.plum },
-  titleStage: { alignItems: 'center', justifyContent: 'flex-start', marginTop: 12 },
+  titleStage: { alignItems: 'center', marginTop: 12 },
   block: { position: 'absolute', backgroundColor: colors.rose, alignSelf: 'center', transformOrigin: 'top' } as object,
-  echo: { position: 'absolute', alignSelf: 'center', alignItems: 'center' },
-  title: { ...serif('600'), position: 'absolute', color: colors.plum, letterSpacing: 1, textAlign: 'center' },
+  echo: { position: 'absolute', alignSelf: 'center', top: 0 },
+  nameWrap: { position: 'absolute', left: 0, right: 0 },
   tri: { position: 'absolute', fontSize: 16, color: colors.plum },
-  fan: { width: '100%', overflow: 'hidden' },
-  ringWrap: { position: 'absolute' },
-  ringDashed: {
+  orbit: { width: '100%' },
+  path: { position: 'absolute', borderWidth: 1, borderStyle: 'dashed', borderColor: colors.lineStrong, opacity: 0.8 },
+  hub: { position: 'absolute', left: '50%', alignItems: 'center', justifyContent: 'center', zIndex: 50, cursor: 'pointer' },
+  hubRing: {
     ...StyleSheet.absoluteFill,
     borderWidth: 1.5,
     borderStyle: 'dashed',
-    borderColor: colors.lineStrong,
+    borderColor: colors.mauve,
+    backgroundColor: 'rgba(255, 249, 244, 0.85)',
   } as object,
-  ringChar: { ...sans('700'), position: 'absolute', fontSize: 13, color: colors.plumSoft },
-  me: { position: 'absolute', left: '50%', marginLeft: -30, width: 60, alignItems: 'center', zIndex: 30 },
-  meArrow: { fontSize: 12, color: colors.plum },
+  ringChar: { ...sans('700'), position: 'absolute', fontSize: 11, color: colors.plumSoft },
+  meArrow: { fontSize: 11, color: colors.plum },
   meText: { ...sans('700'), fontSize: 19, letterSpacing: 2, color: colors.plum },
+  slot: { position: 'absolute', cursor: 'pointer', transformOrigin: 'center' } as object,
   card: {
-    position: 'absolute',
+    ...StyleSheet.absoluteFill,
     borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(64,51,58,0.08)',
-    cursor: 'pointer',
-    transformOrigin: 'center bottom',
-    transitionProperty: 'transform, box-shadow',
-    transitionDuration: '380ms',
-    transitionTimingFunction: 'cubic-bezier(0.2, 0.8, 0.25, 1)',
     ...shadow.lifted,
   } as object,
-  cardFocus: { outlineStyle: 'solid', outlineWidth: 2, outlineColor: colors.mauveDeep, outlineOffset: 4 } as object,
   hint: { ...sans('600'), fontSize: 13, letterSpacing: 1.2, color: colors.plumSoft, textAlign: 'center', paddingVertical: 24 },
 });

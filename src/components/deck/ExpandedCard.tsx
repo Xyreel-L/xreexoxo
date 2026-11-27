@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { ChevronLeft, ChevronRight, X } from '@/components/ui/icons';
 import { colors, sans, serif } from '@/theme/tokens';
+import { CompactSection } from '@/components/ui/SectionContext';
 import { DECK } from './cards';
 import type { CardRect } from './DeckHero';
 
@@ -116,7 +117,7 @@ export function ExpandedCard({
         role="dialog"
         aria-modal
         aria-label={card.title}
-        style={[styles.frame, frame, { backgroundColor: showContent ? colors.cream : card.bg }, !from && popIn]}
+        style={[styles.frame, frame, { backgroundColor: showContent ? colors.ivory : card.bg }, !from && popIn]}
       >
         {!showContent && from ? (
           <View style={[StyleSheet.absoluteFill, styles.fade, { opacity: phase === 'open' ? 0 : 1 }]}>
@@ -153,18 +154,9 @@ export function ExpandedCard({
             </View>
 
             <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
-              <Content key={id} />
-              <Pressable onPress={() => onSwitch(next.id)} style={styles.nextChapter} role="button">
-                {(s) => {
-                  const { hovered } = s as WebState;
-                  return (
-                    <>
-                      <Text style={styles.nextLabel}>NEXT CARD</Text>
-                      <Text style={[styles.nextTitle, hovered && { color: colors.mauve }]}>{next.title} →</Text>
-                    </>
-                  );
-                }}
-              </Pressable>
+              <CompactSection.Provider value={true}>
+                <Content key={id} />
+              </CompactSection.Provider>
             </ScrollView>
           </View>
         ) : null}
@@ -181,7 +173,7 @@ function BarButton({ label, onPress, children }: { label: string; onPress: () =>
       onPress={onPress}
       style={(s) => {
         const { hovered, focused } = s as WebState;
-        return [styles.barBtn, hovered && styles.barBtnHover, focused && styles.focused];
+        return [styles.barBtn, hovered && styles.barBtnHover, focused && styles.barBtnFocus];
       }}
     >
       {children}
@@ -262,16 +254,5 @@ const styles = StyleSheet.create({
     transitionDuration: '160ms',
   },
   barBtnHover: { backgroundColor: colors.white, borderColor: colors.mauve, transform: [{ translateY: -1 }] },
-  focused: { outlineStyle: 'solid', outlineWidth: 2, outlineColor: colors.mauveDeep, outlineOffset: 2 } as object,
-  nextChapter: {
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 48,
-    backgroundColor: colors.cream,
-    borderTopWidth: 1,
-    borderTopColor: colors.line,
-    cursor: 'pointer',
-  },
-  nextLabel: { ...sans('700'), fontSize: 11.5, letterSpacing: 2, color: colors.mauveDeep },
-  nextTitle: { ...serif('500'), fontSize: 32, color: colors.plum, transitionProperty: 'color', transitionDuration: '160ms' },
+  barBtnFocus: { borderColor: colors.mauve, backgroundColor: colors.white },
 });
