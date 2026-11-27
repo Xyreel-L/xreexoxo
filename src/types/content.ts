@@ -44,10 +44,10 @@ export type Skill = {
 };
 
 export type AchievementCategory =
-  | 'professional_certification'
-  | 'technical_examination'
-  | 'technical_training'
-  | 'additional_learning';
+  | 'national_certification'
+  | 'certification_exam'
+  | 'international_exam'
+  | 'training';
 
 export type Achievement = {
   id: string;
@@ -85,11 +85,13 @@ export type Project = {
   featured?: boolean;
 };
 
-export type Education = {
+export type GalleryPhoto = {
   id: string;
-  institution: string;
-  degree?: string;
-  period?: string;
-  description?: string;
-  logo?: LocalImage;
+  /** require('@/assets/gallery/<file>.jpg') */
+  image: LocalImage;
+  /** Describe the photo for screen readers. */
+  alt: string;
+  caption?: string;
+  /** Portrait photos take a taller tile. */
+  orientation?: 'portrait' | 'landscape';
 };

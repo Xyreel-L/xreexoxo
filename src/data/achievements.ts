@@ -1,10 +1,42 @@
 import type { Achievement, AchievementCategory } from '@/types/content';
 
-export const achievementCategories: { key: AchievementCategory; label: string; short: string }[] = [
-  { key: 'professional_certification', label: 'Professional Certifications', short: 'Certifications' },
-  { key: 'technical_examination', label: 'Technical Examinations', short: 'Examinations' },
-  { key: 'technical_training', label: 'Technical Training and Course Certificates', short: 'Training' },
-  { key: 'additional_learning', label: 'Additional Learning', short: 'Additional Learning' },
+/**
+ * Categories, in display order. `issuer` + `kind` form the group heading;
+ * `note` is an optional line shown under it.
+ */
+export const achievementCategories: {
+  key: AchievementCategory;
+  issuer: string;
+  kind: string;
+  short: string;
+  note?: string;
+}[] = [
+  {
+    key: 'national_certification',
+    issuer: 'TESDA',
+    kind: 'National Certification',
+    short: 'TESDA',
+  },
+  {
+    key: 'certification_exam',
+    issuer: 'Certiport',
+    kind: 'International IT Certification Examinations',
+    short: 'Certiport',
+    note: 'Certiport administers certification examinations for different credential programs. Official certification credentials are awarded upon meeting the applicable passing requirements.',
+  },
+  {
+    key: 'international_exam',
+    issuer: 'PhilNITS',
+    kind: 'International IT Examination',
+    short: 'PhilNITS',
+    note: 'Given through ITPEC, an international IT examination framework.',
+  },
+  {
+    key: 'training',
+    issuer: 'Cisco Networking Academy',
+    kind: 'Training and Professional Development',
+    short: 'Cisco NetAcad',
+  },
 ];
 
 /**
@@ -14,81 +46,75 @@ export const achievementCategories: { key: AchievementCategory; label: string; s
  * Only set `result` (e.g. 'Passed') when you have proof.
  */
 export const achievements: Achievement[] = [
-  // A. Professional certification
+  // 1. TESDA — National Certification
   {
     id: 'tesda-css-nc2',
     title: 'Computer Systems Servicing NC II',
     organization: 'Technical Education and Skills Development Authority (TESDA)',
-    category: 'professional_certification',
+    category: 'national_certification',
     year: 2023,
-    credentialType: 'National Certificate',
+    credentialType: 'National Qualification',
     description:
-      'National certification covering the installation, configuration, and maintenance of computer systems and networks.',
+      'National qualification covering the installation, configuration, and maintenance of computer systems and networks.',
   },
 
-  // B. PhilNITS IT Specialist examinations — records only, no pass status assumed
+  // 2. Certiport — certification examinations (no pass status assumed)
   {
-    id: 'philnits-databases',
-    title: 'IT Specialist Examination: Databases',
-    organization: 'Philippine National IT Standards Foundation (PhilNITS)',
-    category: 'technical_examination',
-    year: 2025,
-    credentialType: 'Examination',
-  },
-  {
-    id: 'philnits-device-config',
-    title: 'IT Specialist Examination: Device Configuration and Management (Windows 10)',
-    organization: 'Philippine National IT Standards Foundation (PhilNITS)',
-    category: 'technical_examination',
-    year: 2025,
-    credentialType: 'Examination',
-  },
-  {
-    id: 'philnits-data-analytics',
-    title: 'IT Specialist Examination: Data Analytics',
-    organization: 'Philippine National IT Standards Foundation (PhilNITS)',
-    category: 'technical_examination',
+    id: 'certiport-data-analytics',
+    title: 'Data Analytics',
+    organization: 'Certiport',
+    category: 'certification_exam',
     year: 2026,
-    credentialType: 'Examination',
+    credentialType: 'Certification Examination',
+  },
+  {
+    id: 'certiport-databases',
+    title: 'Databases',
+    organization: 'Certiport',
+    category: 'certification_exam',
+    year: 2025,
+    credentialType: 'Certification Examination',
+  },
+  {
+    id: 'certiport-device-config',
+    title: 'Device Configuration and Management (Windows 10)',
+    organization: 'Certiport',
+    category: 'certification_exam',
+    year: 2025,
+    credentialType: 'Certification Examination',
   },
 
-  // C. Technical training
+  // 3. PhilNITS — IT Passport examination
   {
-    id: 'ccna-srwe',
-    title: 'CCNA: Switching, Routing, and Wireless Essentials',
-    organization: 'Batangas State University',
-    category: 'technical_training',
-    year: 2025,
-    credentialType: 'Course Certificate',
-  },
-  {
-    id: 'data-analytics-essentials',
-    title: 'Data Analytics Essentials',
-    category: 'technical_training',
-    year: 2026,
-    credentialType: 'Course Certificate',
-  },
-  {
-    id: 'ibm-ai-fundamentals',
-    title: 'AI Fundamentals with IBM SkillsBuild',
-    organization: 'IBM SkillsBuild',
-    category: 'technical_training',
-    year: 2025,
-    credentialType: 'Course Certificate',
-  },
-  {
-    id: 'network-addressing',
-    title: 'Network Addressing and Basic Troubleshooting',
-    organization: 'Networking Academy',
-    category: 'technical_training',
-    year: 2025,
-    credentialType: 'Course Certificate',
+    id: 'philnits-ip',
+    title: 'Information Technology Passport (IP) Examination',
+    organization: 'Philippine National IT Standards Foundation (PhilNITS)',
+    category: 'international_exam',
+    year: 2026, // TODO: confirm year
+    credentialType: 'International IT Examination',
   },
 
-  // D. Additional learning
-  { id: 'intro-modern-ai', title: 'Introduction to Modern AI', category: 'additional_learning', year: 2025, credentialType: 'Course Completion' },
-  { id: 'intro-data-science', title: 'Introduction to Data Science', category: 'additional_learning', year: 2025, credentialType: 'Course Completion' },
-  { id: 'find-insights-ai', title: 'Find Insights with AI', category: 'additional_learning', year: 2025, credentialType: 'Course Completion' },
-  { id: 'english-it-1', title: 'English for IT 1', category: 'additional_learning', year: 2025, credentialType: 'Course Completion' },
-  { id: 'english-it-2', title: 'English for IT 2', category: 'additional_learning', year: 2025, credentialType: 'Course Completion' },
+  // 4. Cisco Networking Academy — course certificates
+  ...(
+    [
+      ['ccna-srwe', 'CCNA: Switching, Routing, and Wireless Essentials'],
+      ['network-addressing', 'Network Addressing and Basic Troubleshooting'],
+      ['data-analytics-essentials', 'Data Analytics Essentials'],
+      ['intro-modern-ai', 'Introduction to Modern AI'],
+      ['intro-data-science', 'Introduction to Data Science'],
+      ['find-insights-ai', 'Find Insights with AI'],
+      ['english-it-1', 'English for IT 1'],
+      ['english-it-2', 'English for IT 2'],
+      ['ibm-ai-fundamentals', 'AI Fundamentals with IBM SkillsBuild'],
+    ] as const
+  ).map(
+    ([id, title]): Achievement => ({
+      id,
+      title,
+      organization: 'Cisco Networking Academy',
+      category: 'training',
+      year: 2025,
+      credentialType: 'Course Certificate',
+    }),
+  ),
 ];

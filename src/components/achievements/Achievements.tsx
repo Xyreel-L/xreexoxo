@@ -14,10 +14,10 @@ import { Image } from 'expo-image';
 import {
   ArrowRight,
   BadgeCheck,
-  BookOpen,
   ClipboardCheck,
   ExternalLink,
-  FileBadge,
+  Globe,
+  GraduationCap,
   Search,
   X,
   ZoomIn,
@@ -32,6 +32,7 @@ import { Section, SectionHeader } from '@/components/ui/Section';
 import { Card } from '@/components/ui/Card';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
+import { Reveal } from '@/components/ui/Reveal';
 import { Tag } from '@/components/ui/Tag';
 import { Body, Eyebrow, H3, Small } from '@/components/ui/Typography';
 import { openUrl } from '@/utils/links';
@@ -40,14 +41,13 @@ type WebState = PressableStateCallbackType & { hovered?: boolean; focused?: bool
 type Filter = 'all' | AchievementCategory;
 
 const categoryIcon: Record<AchievementCategory, LucideIcon> = {
-  professional_certification: BadgeCheck,
-  technical_examination: ClipboardCheck,
-  technical_training: FileBadge,
-  additional_learning: BookOpen,
+  national_certification: BadgeCheck,
+  certification_exam: ClipboardCheck,
+  international_exam: Globe,
+  training: GraduationCap,
 };
 
-const categoryLabel = (key: AchievementCategory) =>
-  achievementCategories.find((c) => c.key === key)!.label;
+const categoryOf = (key: AchievementCategory) => achievementCategories.find((c) => c.key === key)!;
 
 export function Achievements({ onMeasure }: { onMeasure: (id: string, y: number) => void }) {
   const { columns } = useBreakpoint();
@@ -61,34 +61,29 @@ export function Achievements({ onMeasure }: { onMeasure: (id: string, y: number)
     return c;
   }, []);
 
-  const order = achievementCategories.map((c) => c.key);
-  const visible = useMemo(() => {
+  // Grouped by issuer, in the order defined in data/achievements.ts; newest first inside a group.
+  const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return achievements
-      .filter((a) => filter === 'all' || a.category === filter)
-      .filter(
-        (a) =>
-          !q ||
-          a.title.toLowerCase().includes(q) ||
-          (a.organization ?? '').toLowerCase().includes(q),
-      )
-      .sort(
-        (a, b) =>
-          b.year - a.year ||
-          order.indexOf(a.category) - order.indexOf(b.category) ||
-          achievements.indexOf(a) - achievements.indexOf(b),
-      );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return achievementCategories
+      .filter((c) => filter === 'all' || c.key === filter)
+      .map((c) => ({
+        ...c,
+        items: achievements
+          .filter((a) => a.category === c.key)
+          .filter(
+            (a) =>
+              !q ||
+              a.title.toLowerCase().includes(q) ||
+              (a.organization ?? '').toLowerCase().includes(q) ||
+              c.issuer.toLowerCase().includes(q),
+          )
+          .sort((a, b) => b.year - a.year),
+      }))
+      .filter((g) => g.items.length > 0);
   }, [filter, query]);
 
-  // Group the (already sorted) list by year for a chronological layout.
-  const byYear = useMemo(() => {
-    const map = new Map<number, Achievement[]>();
-    for (const a of visible) map.set(a.year, [...(map.get(a.year) ?? []), a]);
-    return [...map.entries()];
-  }, [visible]);
-
   const basis = columns === 3 ? '31.5%' : columns === 2 ? '48%' : '100%';
+  const resultCount = groups.reduce((n, g) => n + g.items.length, 0);
 
   return (
     <Section id="achievements" tone="ivory" onMeasure={onMeasure}>
@@ -96,11 +91,46 @@ export function Achievements({ onMeasure }: { onMeasure: (id: string, y: number)
         id="achievements"
         eyebrow="Achievements & Certifications"
         title="Proof of continuous learning."
-        intro="A national certification, IT specialist examinations I have taken, and technical training I have completed. Select a card for details."
+        intro="A national qualification, international IT examinations, and Cisco Networking Academy training. Select any card for details."
       />
 
+      {/* Issuer overview — doubles as a filter */}
+      <View style={styles.overview}>
+        {achievementCategories.map((c) => {
+          const Icon = categoryIcon[c.key];
+          const active = filter === c.key;
+          return (
+            <Pressable
+              key={c.key}
+              role="button"
+              aria-pressed={active}
+              accessibilityLabel={`${c.issuer}: ${counts[c.key] ?? 0}. Show only ${c.issuer}`}
+              onPress={() => setFilter(active ? 'all' : c.key)}
+              style={(s) => {
+                const { hovered, focused } = s as WebState;
+                return [
+                  styles.stat,
+                  hovered && !active && styles.statHover,
+                  active && styles.statActive,
+                  focused && styles.focused,
+                ];
+              }}
+            >
+              <View style={[styles.statIcon, active && { backgroundColor: 'rgba(255,255,255,0.12)' }]}>
+                <Icon size={20} color={active ? colors.blush : colors.mauve} strokeWidth={1.7} />
+              </View>
+              <Text style={[styles.statNumber, active && { color: colors.cream }]}>{counts[c.key] ?? 0}</Text>
+              <Text style={[styles.statIssuer, active && { color: colors.cream }]}>{c.issuer}</Text>
+              <Text style={[styles.statKind, active && { color: colors.blush }]} numberOfLines={2}>
+                {c.kind}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       <View style={styles.toolbar}>
-        <View style={styles.filters} role="tablist" aria-label="Filter achievements by category">
+        <View style={styles.filters} role="tablist" aria-label="Filter achievements">
           <FilterChip label="All" count={counts.all!} active={filter === 'all'} onPress={() => setFilter('all')} />
           {achievementCategories.map((c) => (
             <FilterChip
@@ -131,29 +161,54 @@ export function Achievements({ onMeasure }: { onMeasure: (id: string, y: number)
         </View>
       </View>
 
-      {visible.length === 0 ? (
+      {query ? (
+        <Small style={{ marginBottom: space.lg }} aria-live="polite">
+          {resultCount} {resultCount === 1 ? 'result' : 'results'} for “{query}”
+        </Small>
+      ) : null}
+
+      {groups.length === 0 ? (
         <View style={styles.empty}>
           <Search size={28} color={colors.rose} strokeWidth={1.5} />
           <H3>No matching achievements</H3>
           <Small>Try another keyword or category.</Small>
-          <Button label="Reset filters" variant="secondary" size="sm" onPress={() => { setQuery(''); setFilter('all'); }} />
+          <Button
+            label="Reset filters"
+            variant="secondary"
+            size="sm"
+            onPress={() => {
+              setQuery('');
+              setFilter('all');
+            }}
+          />
         </View>
       ) : (
-        <View style={{ gap: space.xxxl }}>
-          {byYear.map(([year, items]) => (
-            <View key={year} style={{ gap: space.xl }}>
-              <View style={styles.yearRow}>
-                <Text style={styles.year}>{year}</Text>
-                <View style={styles.yearLine} />
-                <Small>{items.length} {items.length === 1 ? 'record' : 'records'}</Small>
-              </View>
-              <View style={styles.grid}>
-                {items.map((a) => (
-                  <AchievementCard key={a.id} item={a} basis={basis} onPress={() => setSelected(a)} />
-                ))}
-              </View>
-            </View>
-          ))}
+        <View style={{ gap: space.huge }}>
+          {groups.map((g, gi) => {
+            const Icon = categoryIcon[g.key];
+            return (
+              <Reveal key={`${g.key}-${filter}`} delay={gi * 60} style={{ gap: space.xl }}>
+                <View style={styles.groupHead}>
+                  <View style={styles.groupIcon}>
+                    <Icon size={22} color={colors.mauve} strokeWidth={1.6} />
+                  </View>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Eyebrow>{g.kind}</Eyebrow>
+                    <Text style={styles.groupIssuer}>{g.issuer}</Text>
+                  </View>
+                  <Text style={styles.groupCount}>
+                    {g.items.length} {g.items.length === 1 ? 'record' : 'records'}
+                  </Text>
+                </View>
+                {g.note ? <Small style={styles.groupNote}>{g.note}</Small> : null}
+                <View style={styles.grid}>
+                  {g.items.map((a) => (
+                    <AchievementCard key={a.id} item={a} basis={basis} onPress={() => setSelected(a)} />
+                  ))}
+                </View>
+              </Reveal>
+            );
+          })}
         </View>
       )}
 
@@ -180,12 +235,7 @@ function FilterChip({
       onPress={onPress}
       style={(s) => {
         const { hovered, focused } = s as WebState;
-        return [
-          styles.chip,
-          hovered && !active && styles.chipHover,
-          active && styles.chipActive,
-          focused && styles.focused,
-        ];
+        return [styles.chip, hovered && !active && styles.chipHover, active && styles.chipActive, focused && styles.focused];
       }}
     >
       <Text style={[styles.chipText, active && { color: colors.cream }]}>{label}</Text>
@@ -219,18 +269,17 @@ function CertificateVisual({ item, height }: { item: Achievement; height: number
 }
 
 function AchievementCard({ item, basis, onPress }: { item: Achievement; basis: string; onPress: () => void }) {
+  const cat = categoryOf(item.category);
   return (
     <Card
       onPress={onPress}
-      accessibilityLabel={`${item.title}, ${item.year}. View details`}
+      accessibilityLabel={`${item.title}, ${cat.issuer}, ${item.year}. View details`}
       style={[styles.card, { flexBasis: basis as `${number}%` }]}
     >
-      <CertificateVisual item={item} height={150} />
+      <CertificateVisual item={item} height={140} />
       <View style={styles.cardBody}>
         <View style={styles.cardMeta}>
-          <Eyebrow style={styles.cardCategory}>
-            {achievementCategories.find((c) => c.key === item.category)!.short}
-          </Eyebrow>
+          <Eyebrow style={styles.cardCategory}>{item.credentialType ?? cat.short}</Eyebrow>
           <Text style={styles.cardYear}>{item.year}</Text>
         </View>
         <H3 numberOfLines={3}>{item.title}</H3>
@@ -249,32 +298,32 @@ function AchievementCard({ item, basis, onPress }: { item: Achievement; basis: s
 
 function AchievementDetail({ item, onClose }: { item: Achievement | null; onClose: () => void }) {
   const [zoomOpen, setZoomOpen] = useState(false);
+  const cat = item ? categoryOf(item.category) : null;
   return (
     <>
       <Sheet visible={!!item} onClose={onClose} label={item?.title ?? 'Achievement details'}>
-        {item ? (
+        {item && cat ? (
           <View style={{ gap: space.xl }}>
             <View style={{ gap: space.md }}>
-              <Eyebrow>{categoryLabel(item.category)}</Eyebrow>
+              <Eyebrow>
+                {cat.issuer} · {cat.kind}
+              </Eyebrow>
               <Text style={styles.detailTitle}>{item.title}</Text>
             </View>
 
             <View style={styles.detailFacts}>
-              <DetailFact label="Organization" value={item.organization ?? 'To be added'} />
+              <DetailFact label="Organization" value={item.organization ?? cat.issuer} />
               <DetailFact label="Year" value={String(item.year)} />
               {item.credentialType ? <DetailFact label="Type" value={item.credentialType} /> : null}
               {item.result ? <DetailFact label="Result" value={item.result} /> : null}
             </View>
 
             {item.description ? <Body>{item.description}</Body> : null}
+            {cat.note ? <Small>{cat.note}</Small> : null}
 
             <View style={styles.detailPreview}>
               {item.certificate ? (
-                <Pressable
-                  onPress={() => setZoomOpen(true)}
-                  accessibilityLabel="Open certificate in full screen"
-                  role="button"
-                >
+                <Pressable onPress={() => setZoomOpen(true)} accessibilityLabel="Open certificate in full screen" role="button">
                   <Image
                     source={item.certificate}
                     style={{ width: '100%', aspectRatio: 1.414 }}
@@ -302,9 +351,7 @@ function AchievementDetail({ item, onClose }: { item: Achievement | null; onClos
           </View>
         ) : null}
       </Sheet>
-      {item?.certificate ? (
-        <ZoomViewer visible={zoomOpen} onClose={() => setZoomOpen(false)} item={item} />
-      ) : null}
+      {item?.certificate ? <ZoomViewer visible={zoomOpen} onClose={() => setZoomOpen(false)} item={item} /> : null}
     </>
   );
 }
@@ -330,10 +377,23 @@ function ZoomViewer({ visible, onClose, item }: { visible: boolean; onClose: () 
           </ScrollView>
         </ScrollView>
         <View style={styles.zoomControls}>
-          <Pressable onPress={() => setZoomed((z) => !z)} style={styles.zoomBtn} accessibilityLabel={zoomed ? 'Zoom out' : 'Zoom in'} role="button">
+          <Pressable
+            onPress={() => setZoomed((z) => !z)}
+            style={styles.zoomBtn}
+            accessibilityLabel={zoomed ? 'Zoom out' : 'Zoom in'}
+            role="button"
+          >
             {zoomed ? <ZoomOut size={20} color={colors.cream} /> : <ZoomIn size={20} color={colors.cream} />}
           </Pressable>
-          <Pressable onPress={() => { setZoomed(false); onClose(); }} style={styles.zoomBtn} accessibilityLabel="Close full screen" role="button">
+          <Pressable
+            onPress={() => {
+              setZoomed(false);
+              onClose();
+            }}
+            style={styles.zoomBtn}
+            accessibilityLabel="Close full screen"
+            role="button"
+          >
             <X size={20} color={colors.cream} />
           </Pressable>
         </View>
@@ -352,6 +412,34 @@ function DetailFact({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  overview: { flexDirection: 'row', flexWrap: 'wrap', gap: space.lg, marginBottom: space.xxl },
+  stat: {
+    flexGrow: 1,
+    flexBasis: 220,
+    gap: 4,
+    padding: space.xl,
+    borderRadius: radius.lg,
+    backgroundColor: colors.cream,
+    borderWidth: 1,
+    borderColor: colors.line,
+    cursor: 'pointer',
+    transitionProperty: 'background-color, border-color, transform',
+    transitionDuration: '200ms',
+  },
+  statHover: { borderColor: colors.rose, transform: [{ translateY: -3 }] },
+  statActive: { backgroundColor: colors.plum, borderColor: colors.plum },
+  statIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    backgroundColor: colors.ivory,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: space.sm,
+  },
+  statNumber: { ...serif('500'), fontSize: 40, lineHeight: 44, color: colors.mauve, letterSpacing: -1 },
+  statIssuer: { ...sans('700'), fontSize: 15, color: colors.plum },
+  statKind: { ...sans('500'), fontSize: 12.5, lineHeight: 18, color: colors.plumSoft },
   toolbar: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -389,7 +477,7 @@ const styles = StyleSheet.create({
     borderColor: colors.lineStrong,
     borderRadius: radius.pill,
     paddingHorizontal: 16,
-    minWidth: 260,
+    minWidth: 240,
     flexGrow: 1,
     maxWidth: 360,
     height: 44,
@@ -402,14 +490,23 @@ const styles = StyleSheet.create({
     height: '100%',
     ...({ outlineStyle: 'none' } as object),
   },
-  yearRow: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
-  year: { ...serif('500'), fontSize: 30, color: colors.plum, letterSpacing: -0.5 },
-  yearLine: { flex: 1, height: 1, backgroundColor: colors.lineStrong },
+  groupHead: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
+  groupIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.md,
+    backgroundColor: colors.blushTint,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  groupIssuer: { ...serif('500'), fontSize: 30, lineHeight: 36, color: colors.plum, letterSpacing: -0.5 },
+  groupCount: { ...sans('600'), fontSize: 13, color: colors.plumSoft },
+  groupNote: { maxWidth: 760, marginTop: -space.sm },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xl },
   card: { flexGrow: 0, flexShrink: 1, backgroundColor: colors.cream },
   cardBody: { padding: space.xl, gap: space.sm, flex: 1 },
-  cardMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardCategory: { fontSize: 10.5, letterSpacing: 1.8 },
+  cardMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: space.sm },
+  cardCategory: { fontSize: 10.5, letterSpacing: 1.6, flexShrink: 1 },
   cardYear: { ...serif('500'), fontSize: 16, color: colors.mauve },
   cardFooter: {
     flexDirection: 'row',
@@ -452,7 +549,13 @@ const styles = StyleSheet.create({
     rowGap: space.lg,
   },
   detailFact: { minWidth: 140, flexGrow: 1, flexBasis: 140, gap: 4, paddingRight: space.lg },
-  detailFactLabel: { ...sans('700'), fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', color: colors.mauveDeep },
+  detailFactLabel: {
+    ...sans('700'),
+    fontSize: 11,
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
+    color: colors.mauveDeep,
+  },
   detailFactValue: { ...sans('600'), fontSize: 15, color: colors.plum, lineHeight: 22 },
   detailPreview: { borderRadius: radius.md, overflow: 'hidden', borderWidth: 1, borderColor: colors.line },
   zoomHint: {

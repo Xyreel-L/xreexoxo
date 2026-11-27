@@ -13,9 +13,11 @@ type Props = {
   scrolled: boolean;
   onNavigate: (id: SectionId) => void;
   monogram: string;
+  /** 0–1 page scroll progress, drawn as a thin bar under the nav. */
+  progress: number;
 };
 
-export function NavBar({ active, scrolled, onNavigate, monogram }: Props) {
+export function NavBar({ active, scrolled, onNavigate, monogram, progress }: Props) {
   const { isDesktop } = useBreakpoint();
   const [open, setOpen] = useState(false);
 
@@ -70,6 +72,10 @@ export function NavBar({ active, scrolled, onNavigate, monogram }: Props) {
         )}
       </View>
 
+      <View style={styles.progressTrack} aria-hidden>
+        <View style={[styles.progressBar, { transform: [{ scaleX: progress }] }]} />
+      </View>
+
       {!isDesktop && open ? (
         <View style={styles.drawer}>
           {NAV_ITEMS.map((item) => (
@@ -108,6 +114,13 @@ function NavLink({ label, active, onPress }: { label: string; active: boolean; o
 }
 
 const styles = StyleSheet.create({
+  progressTrack: { position: 'absolute', left: 0, right: 0, top: layout.navHeight - 2, height: 2, overflow: 'hidden' },
+  progressBar: {
+    height: 2,
+    width: '100%',
+    backgroundColor: colors.mauve,
+    transformOrigin: 'left',
+  } as object,
   bar: {
     // @ts-expect-error web-only positioning
     position: 'fixed',

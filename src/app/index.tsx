@@ -5,19 +5,21 @@ import { colors, layout } from '@/theme/tokens';
 import { NAV_ITEMS, type SectionId } from '@/constants/navigation';
 import { profile } from '@/data/profile';
 import { NavBar } from '@/components/navigation/NavBar';
+import { BackToTop } from '@/components/navigation/BackToTop';
 import { Hero, initials } from '@/components/hero/Hero';
 import { About } from '@/components/about/About';
 import { Skills } from '@/components/skills/Skills';
 import { Achievements } from '@/components/achievements/Achievements';
 import { Projects } from '@/components/projects/Projects';
-import { Education } from '@/components/education/Education';
+import { Gallery } from '@/components/gallery/Gallery';
 import { Contact } from '@/components/contact/Contact';
 
 export default function Home() {
   const scrollRef = useRef<ScrollViewInstance>(null);
   const offsets = useRef<Record<string, number>>({});
   const [active, setActive] = useState<SectionId>('home');
-  const [scrolled, setScrolled] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+  const [progress, setProgress] = useState(0);
 
   const onMeasure = useCallback((id: string, y: number) => {
     offsets.current[id] = y;
@@ -31,7 +33,9 @@ export default function Home() {
   const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
     const y = contentOffset.y;
-    setScrolled(y > 12);
+    const max = Math.max(1, contentSize.height - layoutMeasurement.height);
+    setScrollY(y);
+    setProgress(Math.min(1, Math.max(0, y / max)));
 
     // At the very bottom the last section is active even if it is short.
     if (y + layoutMeasurement.height >= contentSize.height - 4) {
@@ -52,7 +56,7 @@ export default function Home() {
       <ScrollView
         ref={scrollRef}
         onScroll={onScroll}
-        scrollEventThrottle={32}
+        scrollEventThrottle={16}
         style={styles.root}
         contentContainerStyle={{ flexGrow: 1 }}
       >
@@ -62,11 +66,18 @@ export default function Home() {
           <Skills onMeasure={onMeasure} />
           <Achievements onMeasure={onMeasure} />
           <Projects onMeasure={onMeasure} />
-          <Education onMeasure={onMeasure} />
+          <Gallery onMeasure={onMeasure} />
           <Contact onMeasure={onMeasure} />
         </View>
       </ScrollView>
-      <NavBar active={active} scrolled={scrolled} onNavigate={navigate} monogram={initials(profile.fullName)} />
+      <NavBar
+        active={active}
+        scrolled={scrollY > 12}
+        progress={progress}
+        onNavigate={navigate}
+        monogram={initials(profile.fullName)}
+      />
+      <BackToTop visible={scrollY > 700} onPress={() => navigate('home')} />
     </View>
   );
 }

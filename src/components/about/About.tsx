@@ -14,7 +14,7 @@ export function About({ onMeasure }: { onMeasure: (id: string, y: number) => voi
 
   return (
     <Section id="about" tone="ivory" onMeasure={onMeasure}>
-      <SectionHeader id="about" eyebrow="About Me" title="Learning by building, one system at a time." />
+      <SectionHeader id="about" eyebrow="About Me" />
 
       <View style={[styles.grid, isDesktop && { flexDirection: 'row' }]}>
         <View style={[styles.bio, isDesktop && { flex: 1.25 }]}>

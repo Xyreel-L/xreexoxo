@@ -27,9 +27,11 @@ export const profile: Profile = {
     'Networking',
   ],
   careerInterests: ['Software Development', 'Data Analytics', 'IT Support and Systems'], // TODO: confirm
-  photo: undefined, // TODO: add src/assets/images/profile.jpg then: require('@/assets/images/profile.jpg')
+  // Formal photo for the hero. TODO: add src/assets/images/profile.jpg, then:
+  //   photo: require('@/assets/images/profile.jpg'),
+  photo: undefined,
   resumeUrl: undefined, // TODO: add public/resume.pdf (project root) then set to '/resume.pdf'
-  email: 'xreetempo@gmail.com',
+  email: 'lagurascx@gmail.com',
   linkedinUrl: undefined, // TODO: your LinkedIn URL
   githubUrl: 'https://github.com/Xyreel-L',
   otherLinks: [],

@@ -2,6 +2,7 @@ import { StyleSheet, View, ViewProps, ViewStyle } from 'react-native';
 import { colors, layout, space } from '@/theme/tokens';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { Body, Eyebrow, H2 } from './Typography';
+import { InView } from './InView';
 
 export function Container({ style, ...rest }: ViewProps) {
   const { isMobile } = useBreakpoint();
@@ -33,7 +34,9 @@ export function Section({ id, tone = 'cream', onMeasure, style, children, ...res
       style={[{ paddingVertical: isMobile ? space.huge : space.giant }, bg, style]}
       {...rest}
     >
-      <Container>{children}</Container>
+      <Container>
+        <InView>{children}</InView>
+      </Container>
     </View>
   );
 }
@@ -48,7 +51,8 @@ export function SectionHeader({
 }: {
   id: string;
   eyebrow: string;
-  title: string;
+  /** Optional. Without it, the eyebrow becomes the section heading. */
+  title?: string;
   intro?: string;
   align?: 'left' | 'center';
   inverted?: boolean;
@@ -58,14 +62,23 @@ export function SectionHeader({
     <View style={[styles.header, center && { alignItems: 'center' }]}>
       <View style={[styles.eyebrowRow, center && { justifyContent: 'center' }]}>
         <View style={[styles.rule, inverted && { backgroundColor: colors.rose }]} />
-        <Eyebrow style={inverted ? { color: colors.blush } : undefined}>{eyebrow}</Eyebrow>
+        <Eyebrow
+          nativeID={title ? undefined : `${id}-title`}
+          role={title ? undefined : 'heading'}
+          aria-level={title ? undefined : 2}
+          style={inverted ? { color: colors.blush } : undefined}
+        >
+          {eyebrow}
+        </Eyebrow>
       </View>
-      <H2
-        nativeID={`${id}-title`}
-        style={[center && { textAlign: 'center' }, inverted && { color: colors.cream }]}
-      >
-        {title}
-      </H2>
+      {title ? (
+        <H2
+          nativeID={`${id}-title`}
+          style={[center && { textAlign: 'center' }, inverted && { color: colors.cream }]}
+        >
+          {title}
+        </H2>
+      ) : null}
       {intro ? (
         <Body
           style={[
