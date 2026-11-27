@@ -52,10 +52,11 @@ export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardR
   const COPIES = Math.round(360 / STEP / DECK.length); // repeat the deck all the way round
   const spacing = cardW * (isMobile ? 0.8 : 0.92);
   const R = spacing / (2 * Math.sin(((STEP / 2) * Math.PI) / 180));
-  const hubR = isMobile ? 62 : 104;
+  // Big hub filling the inside of the card ring; only its top half shows, as the footer.
+  const hubR = Math.max(isMobile ? 60 : 110, (R - cardH / 2) * 0.95);
   const topPad = 70;
   const pivotY = topPad + cardH / 2 + R; // hub centre, from the top of the wheel area
-  const wheelH = pivotY + Math.max(hubR + 28, cardW * 0.62); // show the hub and the sideways cards
+  const wheelH = pivotY; // clip at the hub's centre so it reads as a half circle
   const startIndex = DECK.findIndex((c) => c.id === CENTER_ID);
   const slots = Array.from({ length: DECK.length * COPIES }, (_, j) => ({
     j,
@@ -239,20 +240,22 @@ export function DeckHero({ onOpen, paused }: { onOpen: (id: string, from?: CardR
         >
           <View style={[styles.hubRing, { borderRadius: hubR }]} />
           <View style={[StyleSheet.absoluteFill, spinAnim]}>
-            <RingText radius={hubR - 16} small={isMobile} />
+            <RingText radius={hubR - (isMobile ? 16 : 24)} small={isMobile} />
           </View>
-          <Text style={styles.meArrow}>▲</Text>
-          <Text style={[styles.meText, isMobile && { fontSize: 18 }]}>ME</Text>
+          <View style={[styles.meWrap, { top: hubR * 0.42 }]}>
+            <Text style={styles.meArrow}>▲</Text>
+            <Text style={[styles.meText, isMobile && { fontSize: 20 }]}>ME</Text>
+          </View>
         </Pressable>
       </View>
 
-      <Text style={styles.hint}>{isMobile ? 'Tap a card to open it' : 'Hover a card to pause · click to open it'}</Text>
+      <Text style={styles.hint}>xreexoxo {new Date().getFullYear()}</Text>
     </View>
   );
 }
 
 function RingText({ radius, small }: { radius: number; small?: boolean }) {
-  const chars = [...'PORTFOLIO · PORTFOLIO · '];
+  const chars = [...'PORTFOLIO · '.repeat(Math.max(2, Math.round(radius / 45)))];
   const stepDeg = 360 / chars.length;
   return (
     <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
@@ -261,7 +264,7 @@ function RingText({ radius, small }: { radius: number; small?: boolean }) {
           key={i}
           style={[
             styles.ringChar,
-            small && { fontSize: 11 },
+            small && { fontSize: 12 },
             { transform: [{ rotate: `${i * stepDeg}deg` }, { translateY: -radius }] },
           ]}
         >
@@ -366,9 +369,10 @@ const styles = StyleSheet.create({
     borderColor: colors.mauve,
     backgroundColor: 'rgba(255, 249, 244, 0.85)',
   } as object,
-  ringChar: { ...sans('700'), position: 'absolute', fontSize: 14, color: colors.plumSoft },
-  meArrow: { fontSize: 11, color: colors.plum },
-  meText: { ...sans('700'), fontSize: 26, letterSpacing: 2, color: colors.plum },
+  ringChar: { ...sans('700'), position: 'absolute', fontSize: 17, color: colors.plumSoft },
+  meWrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
+  meArrow: { fontSize: 12, color: colors.plum },
+  meText: { ...sans('700'), fontSize: 30, letterSpacing: 3, color: colors.plum },
   slot: {
     position: 'absolute',
     left: 0,
