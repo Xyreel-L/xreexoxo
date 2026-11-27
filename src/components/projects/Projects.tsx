@@ -15,7 +15,7 @@ import { Tag } from '@/components/ui/Tag';
 import { Body, Eyebrow, H3, Small } from '@/components/ui/Typography';
 import { openUrl } from '@/utils/links';
 
-export function Projects({ onMeasure }: { onMeasure: (id: string, y: number) => void }) {
+export function Projects({ onMeasure }: { onMeasure?: (id: string, y: number) => void }) {
   const { isDesktop, columns } = useBreakpoint();
   const [selected, setSelected] = useState<Project | null>(null);
   const featured = projects.filter((p) => p.featured);

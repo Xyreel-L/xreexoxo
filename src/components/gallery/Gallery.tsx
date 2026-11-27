@@ -8,7 +8,7 @@ import { gallery } from '@/data/gallery';
 import { Section, SectionHeader } from '@/components/ui/Section';
 
 /** Photo gallery with a full-screen lightbox. Renders nothing until photos are added. */
-export function Gallery({ onMeasure }: { onMeasure: (id: string, y: number) => void }) {
+export function Gallery({ onMeasure }: { onMeasure?: (id: string, y: number) => void }) {
   const { columns } = useBreakpoint();
   const [open, setOpen] = useState<number | null>(null);
 

@@ -16,7 +16,7 @@ type Errors = Partial<Record<'name' | 'subject' | 'message', string>>;
  * No backend: the form validates the message and opens the visitor's own
  * email app with everything pre-filled (mailto).
  */
-export function Contact({ onMeasure }: { onMeasure: (id: string, y: number) => void }) {
+export function Contact({ onMeasure }: { onMeasure?: (id: string, y: number) => void }) {
   const { isDesktop } = useBreakpoint();
   const [name, setName] = useState('');
   const [subject, setSubject] = useState('');

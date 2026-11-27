@@ -8,7 +8,7 @@ import { Body, Small } from '@/components/ui/Typography';
 import { Card } from '@/components/ui/Card';
 import { Tag } from '@/components/ui/Tag';
 
-export function About({ onMeasure }: { onMeasure: (id: string, y: number) => void }) {
+export function About({ onMeasure }: { onMeasure?: (id: string, y: number) => void }) {
   const { isDesktop } = useBreakpoint();
   const [lead, ...rest] = profile.biography;
 

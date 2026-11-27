@@ -49,7 +49,7 @@ const categoryIcon: Record<AchievementCategory, LucideIcon> = {
 
 const categoryOf = (key: AchievementCategory) => achievementCategories.find((c) => c.key === key)!;
 
-export function Achievements({ onMeasure }: { onMeasure: (id: string, y: number) => void }) {
+export function Achievements({ onMeasure }: { onMeasure?: (id: string, y: number) => void }) {
   const { columns } = useBreakpoint();
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
